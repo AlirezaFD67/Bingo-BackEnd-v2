@@ -10,6 +10,7 @@ import session from 'express-session';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { logger } from './common/utils/logger';
 
 declare module 'express-session' {
   interface SessionData {
