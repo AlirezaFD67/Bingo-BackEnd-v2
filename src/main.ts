@@ -69,7 +69,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
   });
-  SwaggerModule.setup('api', app, document, {
+  SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
       docExpansion: 'list',
@@ -89,7 +89,7 @@ async function bootstrap() {
   // Redirect root path to API documentation
   app.use('/', (req, res, next) => {
     if (req.path === '/') {
-      res.redirect('/api');
+      res.redirect('/api/docs');
     } else {
       next();
     }

@@ -31,6 +31,39 @@
 $ pnpm install
 ```
 
+## Environment Setup
+
+Create a `.env` file in the root directory with the following configuration:
+
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASS=postgres
+DB_NAME=bingo_backend_v3
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-here-change-in-production
+
+# Application Configuration
+NODE_ENV=development
+PORT=3006
+```
+
+## Database Setup
+
+Make sure you have PostgreSQL running and create a database named `bingo_backend_v3`.
+
+## API Endpoints
+
+### Authentication
+- **POST** `/api/auth/request-otp` - درخواست کد OTP
+- **POST** `/api/auth/verify-otp` - تایید کد OTP
+
+### API Documentation
+- **GET** `/api/docs` - مستندسازی Swagger
+
 ## Compile and run the project
 
 ```bash

@@ -7,7 +7,7 @@ import { RequestOtpResponseDto } from './dto/request-otp-response.dto';
 import { VerifyOtpResponseDto } from './dto/verify-otp-response.dto';
 
 @ApiTags('auth')
-@Controller('api/auth')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

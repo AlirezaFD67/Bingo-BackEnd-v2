@@ -22,16 +22,9 @@ describe('AppController (e2e)', () => {
       .expect(404); // Should return 404 as there's no root controller for /api
   });
 
-  it('/api/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/api/')
-      .expect(200)
-      .expect('Hello World!');
-  });
-
   it('should have CORS enabled', () => {
     return request(app.getHttpServer())
-      .options('/api/')
+      .options('/auth/request-otp')
       .expect(204)
       .expect('access-control-allow-origin', '*');
   });

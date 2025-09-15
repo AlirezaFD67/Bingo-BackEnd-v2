@@ -57,6 +57,7 @@ export class AuthService {
 
     return {
       message: 'OTP sent successfully',
+      phoneNumber,
       code, // فقط در محیط development نمایش داده می‌شود
       canUseReferral,
     };

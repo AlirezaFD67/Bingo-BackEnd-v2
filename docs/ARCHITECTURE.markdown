@@ -6,7 +6,8 @@
 - [۱. معماری پروژه](#۱-معماری-پروژه)
 - [۲. وابستگی‌های پروژه](#۲-وابستگی‌های-پروژه)
 - [۳. ساختار پروژه](#۳-ساختار-پروژه)
-- [۴. نکات](#۴-نکات)
+- [۴. تنظیمات دیتابیس](#۴-تنظیمات-دیتابیس)
+- [۵. نکات](#۵-نکات)
 - [منابع مرتبط](#منابع-مرتبط)
 
 ---
@@ -26,7 +27,8 @@
 ---
 
 ## ۲. وابستگی‌های پروژه
-- **پکیج‌ها**: `@nestjs/core`, `@nestjs/common`, `@nestjs/typeorm` یا `@nestjs/prisma`, `@nestjs/jwt`, `@nestjs/passport`, `winston`, `@nestjs/swagger`.
+- **پکیج‌ها**: `@nestjs/core`, `@nestjs/common`, `@nestjs/typeorm` (PostgreSQL), `@nestjs/jwt`, `@nestjs/passport`, `winston`, `@nestjs/swagger`.
+- **دیتابیس**: PostgreSQL به عنوان دیتابیس اصلی (توصیه می‌شود).
 
 ---
 
@@ -61,7 +63,32 @@ project-root/
 
 ---
 
-## ۴. نکات
+## ۴. تنظیمات دیتابیس
+- **پیکربندی استاندارد** در `src/app.module.ts`:
+  ```typescript
+  TypeOrmModule.forRoot({
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASS || 'postgres',
+    database: process.env.DB_NAME || 'postgres',
+    entities: [__dirname + '/**/*.entity{.ts,.js}'],
+    migrations: [__dirname + '/migrations/*{.ts,.js}'],
+    synchronize: true, // فقط برای development
+  })
+  ```
+- **متغیرهای محیطی ضروری**:
+  - `DB_HOST`: آدرس سرور دیتابیس
+  - `DB_PORT`: پورت دیتابیس (پیش‌فرض: 5432)
+  - `DB_USER`: نام کاربری دیتابیس
+  - `DB_PASS`: رمز عبور دیتابیس
+  - `DB_NAME`: نام دیتابیس
+- **نکته امنیتی**: در محیط production مقدار `synchronize` را روی `false` تنظیم کنید
+
+---
+
+## ۵. نکات
 - برای **مستندسازی Swagger** به SWAGGER_GUIDELINES.markdown مراجعه کنید.
 - برای **APIها** به API_GUIDELINES.markdown مراجعه کنید.
 - برای **تست‌ها** به TESTING_GUIDELINES.markdown مراجعه کنید.

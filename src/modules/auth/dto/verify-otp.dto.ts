@@ -1,4 +1,4 @@
-import { IsString, IsOptional, Length, Matches } from 'class-validator';
+import { IsString, IsOptional, Length, Matches, ValidateIf } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyOtpDto {
@@ -21,6 +21,7 @@ export class VerifyOtpDto {
 
   @IsOptional()
   @IsString()
+  @ValidateIf((o) => o.incomingReferral && o.incomingReferral.length > 0)
   @Length(5, 5, { message: 'Referral code must be exactly 5 characters' })
   @ApiProperty({
     example: 'ABC12',
