@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class SeedPrizeConfigs1700000000004 implements MigrationInterface {
+export class SeedPrizeConfigs1700000000007 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       // The type '1' corresponds to the 'GLOBAL' game type.

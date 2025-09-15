@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class SeedCardsTable1700000000003 implements MigrationInterface {
+export class SeedCardsTable1700000000006 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Seed the cards table with 30 default cards
     await queryRunner.query(`

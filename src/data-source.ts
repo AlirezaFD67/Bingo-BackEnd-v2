@@ -8,10 +8,10 @@ const AppDataSource = new DataSource({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
   username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'postgres',
+  password: process.env.DB_PASS || 'alireza123456',
   database: process.env.DB_NAME || 'postgres',
-  entities: [__dirname + '/src/**/*.entity{.ts,.js}'], // 🟢 اصلاح مسیر
-  migrations: [__dirname + '/src/migrations/*{.ts,.js}', __dirname + '/src/seeds/*{.ts,.js}'], // 🟢 اصلاح مسیر
+  entities: ['src/**/*.entity.{ts,js}'],
+  migrations: ['src/migrations/*.{ts,js}', 'src/seeds/*.{ts,js}'],
 });
 
 export default AppDataSource;
