@@ -85,6 +85,16 @@ async function bootstrap() {
     customSiteTitle: 'Bingo Game API Documentation',
   });
 
-  await app.listen(3006);
+  // Redirect root path to API documentation
+  app.use('/', (req, res, next) => {
+    if (req.path === '/') {
+      res.redirect('/api');
+    } else {
+      next();
+    }
+  });
+
+  const port = parseInt(process.env.PORT || '3000', 10);
+  await app.listen(port);
 }
 bootstrap();

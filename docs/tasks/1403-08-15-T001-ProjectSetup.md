@@ -45,7 +45,7 @@ T001
 - ✅ بروزرسانی `package.json` با اسکریپت‌های مورد نیاز
 
 ### ۴. فایل‌های تنظیمات
-- ✅ ایجاد `.env.local` با تنظیمات محیطی
+- ✅ ایجاد `.env` با تنظیمات محیطی
 - ✅ ایجاد اسکریپت‌های مدیریتی (`create-admin.ts`, `reset-database.ts`)
 - ✅ تنظیمات TypeORM config
 
@@ -63,7 +63,7 @@ T001
 - **راه‌حل**: استفاده از better-sqlite3 که bindings بهتری دارد
 
 ### چالش ۲: تنظیمات env
-- **مشکل**: فایل .env.local توسط globalIgnore بلاک شده بود
+- **مشکل**: فایل .env توسط globalIgnore بلاک شده بود
 - **راه‌حل**: استفاده از command line برای ایجاد فایل
 
 ## نتایج
@@ -78,7 +78,7 @@ T001
 - `src/data-source.ts` - تنظیمات دیتابیس
 - `src/config/typeorm.config.ts` - تنظیمات TypeORM برای migration
 - `package.json` - اسکریپت‌های مورد نیاز
-- `.env.local` - تنظیمات محیطی
+- `.env` - تنظیمات محیطی
 - `src/migrations/` - migrations برای تمام جداول دیتابیس
 - `src/seeds/` - seeds برای داده‌های اولیه
 - `src/**/*.spec.ts` - فایل‌های تست unit

@@ -2,34 +2,13 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class SeedGameRooms1700000000002 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.manager
-      .createQueryBuilder()
-      .insert()
-      .into('game_rooms')
-      .values([
-        {
-          entryFee: 5000,
-          startTimer: 30,
-          isActive: true,
-          type: 1,
-          minPlayers: 1,
-        },
-        {
-          entryFee: 10000,
-          startTimer: 30,
-          isActive: true,
-          type: 1,
-          minPlayers: 1,
-        },
-        {
-          entryFee: 20000,
-          startTimer: 30,
-          isActive: true,
-          type: 1,
-          minPlayers: 1,
-        },
-      ])
-      .execute();
+    await queryRunner.query(`
+      INSERT INTO game_rooms (entryFee, startTimer, isActive, type, minPlayers)
+      VALUES
+        (5000, 30, 1, 1, 1),
+        (10000, 30, 1, 1, 1),
+        (20000, 30, 1, 1, 1)
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

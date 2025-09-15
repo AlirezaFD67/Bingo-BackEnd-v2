@@ -10,7 +10,9 @@ export class CreatePrizeConfigsTable1700000000006
         columns: [
           {
             name: 'id',
-            type: 'serial',
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
             isPrimary: true,
           },
           {
@@ -34,13 +36,13 @@ export class CreatePrizeConfigsTable1700000000006
           {
             name: 'created_at',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
           {
             name: 'updated_at',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
         ],

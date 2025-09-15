@@ -8,7 +8,7 @@ export class CreateGameRoomsTable1700000000002 implements MigrationInterface {
         columns: [
           {
             name: 'id',
-            type: 'serial',
+            type: 'integer',
             isPrimary: true,
             isGenerated: true,
             generationStrategy: 'increment',
@@ -41,7 +41,7 @@ export class CreateGameRoomsTable1700000000002 implements MigrationInterface {
           {
             name: 'createdAt',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
         ],

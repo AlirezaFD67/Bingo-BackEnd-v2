@@ -8,7 +8,9 @@ export class CreateCardsTable1700000000005 implements MigrationInterface {
         columns: [
           {
             name: 'id',
-            type: 'serial',
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
             isPrimary: true,
           },
           {
@@ -26,7 +28,7 @@ export class CreateCardsTable1700000000005 implements MigrationInterface {
           {
             name: 'created_at',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
         ],

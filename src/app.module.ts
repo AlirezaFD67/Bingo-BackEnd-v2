@@ -3,26 +3,26 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: '.env',
     }),
-    TypeOrmModule.forRootAsync({
-      useFactory: () => ({
-        type: process.env.DB_TYPE === 'postgres' ? 'postgres' : 'better-sqlite3',
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432', 10),
-        username: process.env.DB_USERNAME || 'postgres',
-        password: process.env.DB_PASSWORD || 'postgres',
-        database: process.env.DB_DATABASE || 'bingo_db.sqlite',
-        entities: ['src/**/*.entity.{ts,js}'],
-        migrations: ['src/migrations/*.{ts,js}'],
-        synchronize: process.env.NODE_ENV !== 'production',
-      }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      username: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASS || 'postgres',
+      database: process.env.DB_NAME || 'postgres',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'], // 🟢 اصلاح مسیر
+      migrations: [__dirname + '/migrations/*{.ts,.js}'], // 🟢 اصلاح مسیر
+      synchronize: true, // ❌ توی production خاموشش کن
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

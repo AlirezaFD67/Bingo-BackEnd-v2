@@ -10,7 +10,7 @@ export class CreateUserTable1700000000001 implements MigrationInterface {
           // Primary Key
           {
             name: 'id',
-            type: 'serial',
+            type: 'integer',
             isPrimary: true,
             isGenerated: true,
             generationStrategy: 'increment',
@@ -86,13 +86,13 @@ export class CreateUserTable1700000000001 implements MigrationInterface {
           {
             name: 'createdAt',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
           {
             name: 'updatedAt',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
         ],

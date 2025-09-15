@@ -15,7 +15,9 @@ export class CreateActiveRoomWinners1700000000004
         columns: [
           {
             name: 'id',
-            type: 'serial',
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
             isPrimary: true,
           },
           {
@@ -42,7 +44,7 @@ export class CreateActiveRoomWinners1700000000004
           {
             name: 'winAt',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
         ],

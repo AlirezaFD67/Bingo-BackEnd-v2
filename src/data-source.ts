@@ -4,14 +4,14 @@ import { config } from 'dotenv';
 config();
 
 const AppDataSource = new DataSource({
-  type: process.env.DB_TYPE === 'postgres' ? 'postgres' : 'better-sqlite3',
+  type: 'postgres', // 🟢 تغییر از sqlite به postgres
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_DATABASE || 'bingo_db.sqlite',
-  entities: ['src/**/*.entity.{ts,js}'],
-  migrations: ['src/migrations/*.{ts,js}'],
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASS || 'postgres',
+  database: process.env.DB_NAME || 'postgres',
+  entities: [__dirname + '/src/**/*.entity{.ts,.js}'], // 🟢 اصلاح مسیر
+  migrations: [__dirname + '/src/migrations/*{.ts,.js}', __dirname + '/src/seeds/*{.ts,.js}'], // 🟢 اصلاح مسیر
 });
 
 export default AppDataSource;

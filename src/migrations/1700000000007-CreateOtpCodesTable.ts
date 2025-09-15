@@ -8,8 +8,10 @@ export class CreateOtpCodesTable1700000000007 implements MigrationInterface {
         columns: [
           {
             name: 'id',
-            type: 'serial',
+            type: 'integer',
             isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
           },
           {
             name: 'phoneNumber',
@@ -40,7 +42,7 @@ export class CreateOtpCodesTable1700000000007 implements MigrationInterface {
           {
             name: 'createdAt',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
           {

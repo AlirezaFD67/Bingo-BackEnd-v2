@@ -15,7 +15,9 @@ export class CreateReferralLinksTable1700000000008
         columns: [
           {
             name: 'id',
-            type: 'serial',
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
             isPrimary: true,
           },
           {
@@ -32,7 +34,7 @@ export class CreateReferralLinksTable1700000000008
           {
             name: 'createdAt',
             type: 'timestamp',
-            default: 'now()',
+            default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
         ],
