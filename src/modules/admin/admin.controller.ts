@@ -4,6 +4,8 @@ import {
   UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from '../users/users.service';
@@ -37,5 +39,31 @@ export class AdminController {
   })
   async getAllUsers(): Promise<AdminUserResponseDto[]> {
     return this.usersService.getAllUsers();
+  }
+
+  @Get('users/:id')
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'دریافت کاربر بر اساس ID',
+    description: 'اطلاعات کاربر مشخص را برمی‌گرداند (فقط برای ادمین‌ها)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'اطلاعات کاربر با موفقیت دریافت شد',
+    type: AdminUserResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'توکن معتبر نیست یا کاربر ادمین نیست',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'کاربر یافت نشد',
+  })
+  async getUserById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AdminUserResponseDto> {
+    return this.usersService.getUserById(id);
   }
 }

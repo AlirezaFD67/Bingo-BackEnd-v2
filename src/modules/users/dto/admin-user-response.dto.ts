@@ -66,6 +66,22 @@ export class AdminUserResponseDto {
   shebaNumber?: string;
 
   @ApiProperty({
+    description: 'کد معرف',
+    example: '12345',
+    required: false,
+  })
+  @Expose()
+  referralCode?: string;
+
+  @ApiProperty({
+    description: 'کد معرف کننده',
+    example: '67890',
+    required: false,
+  })
+  @Expose()
+  referredBy?: string;
+
+  @ApiProperty({
     description: 'نقش کاربر',
     example: 'USER',
     enum: ['USER', 'ADMIN'],

@@ -71,10 +71,37 @@ export class UsersService {
       phoneNumber: user.phoneNumber,
       bankCardNumber: user.bankCardNumber,
       shebaNumber: user.shebaNumber,
+      referralCode: user.referralCode,
+      referredBy: user.referredBy,
       role: user.role,
       createdAt: user.createdAt,
       createdAtPersian: this.convertToPersianDate(user.createdAt),
     }));
+  }
+
+  async getUserById(id: number): Promise<AdminUserResponseDto> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phoneNumber: user.phoneNumber,
+      bankCardNumber: user.bankCardNumber,
+      shebaNumber: user.shebaNumber,
+      referralCode: user.referralCode,
+      referredBy: user.referredBy,
+      role: user.role,
+      createdAt: user.createdAt,
+      createdAtPersian: this.convertToPersianDate(user.createdAt),
+    };
   }
 
   async updateProfile(
