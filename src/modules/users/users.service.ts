@@ -9,6 +9,7 @@ import { User } from '../../entities/user.entity';
 import { Reservation } from '../../entities/reservation.entity';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+import { AdminUserResponseDto } from './dto/admin-user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -55,6 +56,25 @@ export class UsersService {
         status: reservation.status,
       })),
     };
+  }
+
+  async getAllUsers(): Promise<AdminUserResponseDto[]> {
+    const users = await this.userRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+
+    return users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phoneNumber: user.phoneNumber,
+      bankCardNumber: user.bankCardNumber,
+      shebaNumber: user.shebaNumber,
+      role: user.role,
+      createdAt: user.createdAt,
+      createdAtPersian: this.convertToPersianDate(user.createdAt),
+    }));
   }
 
   async updateProfile(

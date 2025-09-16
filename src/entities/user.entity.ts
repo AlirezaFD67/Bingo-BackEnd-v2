@@ -11,6 +11,8 @@ export enum UserRole {
   ADMIN = 'ADMIN',
 }
 
+export { UserRole as UserRoleEnum };
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()

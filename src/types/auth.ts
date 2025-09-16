@@ -72,11 +72,9 @@ export interface SessionData {
   userExists?: boolean;
 }
 
-export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  MODERATOR = 'moderator',
-}
+import { UserRole } from '../entities/user.entity';
+
+export { UserRole };
 
 export enum AuthProvider {
   LOCAL = 'local',

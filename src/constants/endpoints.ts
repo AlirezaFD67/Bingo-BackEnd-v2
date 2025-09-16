@@ -6,6 +6,12 @@ export const ENDPOINTS = {
     VERIFY_OTP: '/auth/verify-otp',
   },
 
+  // Admin endpoints
+  ADMIN: {
+    BASE: '/admin',
+    USERS: '/admin/users',
+  },
+
   // API Documentation
   DOCS: {
     SWAGGER: '/api/docs',
