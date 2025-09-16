@@ -38,10 +38,10 @@ export class User {
   @Column({ length: 26, nullable: true })
   shebaNumber?: string;
 
-  @Column({ length: 5, unique: true, nullable: true })
+  @Column({ length: 6, unique: true, nullable: true })
   referralCode?: string;
 
-  @Column({ length: 5, nullable: true })
+  @Column({ length: 6, nullable: true })
   referredBy?: string;
 
   @CreateDateColumn()

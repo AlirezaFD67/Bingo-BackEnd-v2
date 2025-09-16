@@ -9,6 +9,7 @@ import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RequestOtpResponseDto } from './dto/request-otp-response.dto';
 import { VerifyOtpResponseDto } from './dto/verify-otp-response.dto';
+import { ERROR_MESSAGES } from '../../common/constants/error-messages';
 
 @Injectable()
 export class AuthService {
@@ -28,6 +29,17 @@ export class AuthService {
     const existingUser = await this.userRepository.findOne({
       where: { phoneNumber },
     });
+
+    // بررسی اعتبار کد رفرال اگر ارائه شده
+    if (incomingReferral) {
+      const referralUser = await this.userRepository.findOne({
+        where: { referralCode: incomingReferral },
+      });
+
+      if (!referralUser) {
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_REFERRAL_CODE.error);
+      }
+    }
 
     // تعیین canUseReferral
     let canUseReferral = false;
@@ -66,6 +78,17 @@ export class AuthService {
   async verifyOtp(dto: VerifyOtpDto): Promise<VerifyOtpResponseDto> {
     const { phoneNumber, code, incomingReferral } = dto;
 
+    // بررسی اعتبار کد رفرال اگر ارائه شده
+    if (incomingReferral) {
+      const referralUser = await this.userRepository.findOne({
+        where: { referralCode: incomingReferral },
+      });
+
+      if (!referralUser) {
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_REFERRAL_CODE.error);
+      }
+    }
+
     // جستجوی OTP معتبر
     const otpCode = await this.otpCodeRepository.findOne({
       where: {
@@ -76,6 +99,7 @@ export class AuthService {
     });
 
     if (!otpCode) {
+      console.log(`OTP verification failed: No OTP found for phone ${phoneNumber} with code ${code}`);
       throw new BadRequestException('Invalid OTP code');
     }
 
@@ -95,11 +119,14 @@ export class AuthService {
       where: { phoneNumber },
     });
 
-    // اگر کاربر جدید است، ایجاد رکورد جدید
+    // اگر کاربر جدید است، ایجاد رکورد جدید با کد رفرال
     if (!user) {
+      const referralCode = await this.generateUniqueReferralCode();
+
       user = this.userRepository.create({
         phoneNumber,
-        referredBy: incomingReferral || otpCode.incomingReferral,
+        referredBy: incomingReferral && incomingReferral.trim() !== '' ? incomingReferral : (otpCode.incomingReferral && otpCode.incomingReferral.trim() !== '' ? otpCode.incomingReferral : undefined),
+        referralCode,
       });
       await this.userRepository.save(user);
     }
@@ -116,5 +143,37 @@ export class AuthService {
       accessToken,
       hasUsername: !!user.username,
     };
+  }
+
+  /**
+   * تولید کد رفرال ۶ رقمی منحصر به فرد
+   */
+  private async generateUniqueReferralCode(): Promise<string> {
+    let referralCode: string;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10; // جلوگیری از حلقه بی‌نهایت
+
+    do {
+      // تولید کد ۶ رقمی تصادفی
+      referralCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // بررسی منحصر به فرد بودن
+      const existingUser = await this.userRepository.findOne({
+        where: { referralCode },
+      });
+
+      isUnique = !existingUser;
+      attempts++;
+
+      // اگر بعد از چندین تلاش موفق نشد، کد را با timestamp ترکیب کن
+      if (attempts >= maxAttempts && !isUnique) {
+        const timestamp = Date.now().toString().slice(-4); // ۴ رقم آخر timestamp
+        referralCode = Math.floor(1000 + Math.random() * 9000).toString() + timestamp;
+      }
+
+    } while (!isUnique && attempts < maxAttempts + 1);
+
+    return referralCode;
   }
 }

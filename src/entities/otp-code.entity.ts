@@ -17,7 +17,7 @@ export class OtpCode {
   @Column({ type: 'timestamp', nullable: true })
   verifiedAt?: Date;
 
-  @Column({ nullable: true })
+  @Column({ length: 6, nullable: true })
   incomingReferral?: string;
 
   @CreateDateColumn()

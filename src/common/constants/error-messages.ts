@@ -10,6 +10,7 @@ export const ERROR_MESSAGES = {
   OTP_INVALID: { error: 'Invalid OTP code', status: 400 },
   OTP_EXPIRED: { error: 'OTP code expired', status: 400 },
   OTP_TOO_MANY_ATTEMPTS: { error: 'Too many OTP attempts', status: 429 },
+  INVALID_REFERRAL_CODE: { error: 'Invalid referral code', status: 400 },
   DATABASE_ERROR: { error: 'Database error', status: 500 },
   DUPLICATE_ENTRY: { error: 'Duplicate entry', status: 409 },
   INTERNAL_SERVER_ERROR: { error: 'Internal server error', status: 500 },

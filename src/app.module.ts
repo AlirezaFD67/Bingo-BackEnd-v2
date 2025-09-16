@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { ClassSerializerInterceptor } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ApiClientInterceptor } from './common/interceptors/api-client.interceptor';
 
@@ -26,6 +28,7 @@ import { ApiClientInterceptor } from './common/interceptors/api-client.intercept
       synchronize: true, // ❌ توی production خاموشش کن
     }),
     AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [
@@ -37,6 +40,10 @@ import { ApiClientInterceptor } from './common/interceptors/api-client.intercept
     {
       provide: APP_INTERCEPTOR,
       useClass: ApiClientInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor,
     },
   ],
 })

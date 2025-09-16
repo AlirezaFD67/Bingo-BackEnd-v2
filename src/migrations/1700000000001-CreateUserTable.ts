@@ -71,14 +71,14 @@ export class CreateUserTable1700000000001 implements MigrationInterface {
           {
             name: 'referralCode',
             type: 'varchar',
-            length: '5',
+            length: '6',
             isUnique: true,
             isNullable: true,
           },
           {
             name: 'referredBy',
             type: 'varchar',
-            length: '5',
+            length: '6',
             isNullable: true,
           },
 

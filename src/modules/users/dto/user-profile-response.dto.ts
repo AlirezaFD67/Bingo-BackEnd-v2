@@ -1,0 +1,135 @@
+import { Expose } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class ReservationInfoDto {
+  @ApiProperty({
+    description: 'شناسه اتاق فعال',
+    example: 5,
+    required: false,
+  })
+  @Expose()
+  activeRoomId?: number;
+
+  @ApiProperty({
+    description: 'تعداد کارت‌های رزرو شده',
+    example: 2,
+  })
+  @Expose()
+  cardCount: number;
+
+  @ApiProperty({
+    description: 'هزینه ورودی (به ریال)',
+    example: 100000,
+  })
+  @Expose()
+  entryFee: number;
+
+  @ApiProperty({
+    description: 'وضعیت رزرو',
+    example: 'pending',
+    enum: ['pending', 'started', 'completed', 'cancelled'],
+  })
+  @Expose()
+  status: string;
+}
+
+export class UserProfileResponseDto {
+  @ApiProperty({
+    description: 'شناسه کاربر',
+    example: 1,
+  })
+  @Expose()
+  id: number;
+
+  @ApiProperty({
+    description: 'نام کاربری',
+    example: 'john_doe',
+    required: false,
+  })
+  @Expose()
+  username?: string;
+
+  @ApiProperty({
+    description: 'نام',
+    example: 'علی',
+    required: false,
+  })
+  @Expose()
+  firstName?: string;
+
+  @ApiProperty({
+    description: 'نام خانوادگی',
+    example: 'احمدی',
+    required: false,
+  })
+  @Expose()
+  lastName?: string;
+
+  @ApiProperty({
+    description: 'شماره تلفن',
+    example: '09123456789',
+  })
+  @Expose()
+  phoneNumber: string;
+
+  @ApiProperty({
+    description: 'شماره کارت بانکی',
+    example: '1234 5678 9012 3456',
+    required: false,
+  })
+  @Expose()
+  bankCardNumber?: string;
+
+  @ApiProperty({
+    description: 'شماره شبا',
+    example: 'IR123456789012345678901234',
+    required: false,
+  })
+  @Expose()
+  shebaNumber?: string;
+
+  @ApiProperty({
+    description: 'نقش کاربر',
+    example: 'USER',
+    enum: ['USER', 'ADMIN'],
+  })
+  @Expose()
+  role: string;
+
+  @ApiProperty({
+    description: 'تاریخ ایجاد حساب (میلادی)',
+    example: '2024-06-20T12:34:56.789Z',
+  })
+  @Expose()
+  createdAt: Date;
+
+  @ApiProperty({
+    description: 'تاریخ ایجاد حساب (شمسی)',
+    example: '1403/03/31',
+  })
+  @Expose()
+  createdAtPersian: string;
+
+  @ApiProperty({
+    description: 'کد معرف ۶ رقمی منحصر به فرد کاربر',
+    example: '123456',
+    required: false,
+  })
+  @Expose()
+  referralCode?: string;
+
+  @ApiProperty({
+    description: 'کد معرف کننده',
+    example: '67890',
+    required: false,
+  })
+  @Expose()
+  referredBy?: string;
+
+  @ApiProperty({
+    description: 'لیست رزروهای کاربر',
+    type: [ReservationInfoDto],
+  })
+  @Expose()
+  reservations: ReservationInfoDto[];
+}

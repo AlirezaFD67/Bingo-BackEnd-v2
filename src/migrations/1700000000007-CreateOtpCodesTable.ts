@@ -37,6 +37,7 @@ export class CreateOtpCodesTable1700000000007 implements MigrationInterface {
           {
             name: 'incomingReferral',
             type: 'varchar',
+            length: '6',
             isNullable: true,
           },
           {
