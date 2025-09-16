@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
 import { Reservation } from '../../entities/reservation.entity';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
+import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -43,13 +48,57 @@ export class UsersService {
       createdAtPersian,
       referralCode: user.referralCode,
       referredBy: user.referredBy,
-      reservations: reservations.map(reservation => ({
+      reservations: reservations.map((reservation) => ({
         activeRoomId: reservation.activeRoomId,
         cardCount: reservation.cardCount,
         entryFee: Number(reservation.entryFee),
         status: reservation.status,
       })),
     };
+  }
+
+  async updateProfile(
+    userId: number,
+    updateData: UpdateUserProfileDto,
+  ): Promise<UserProfileResponseDto> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+
+    // Check if username is being updated and if it's already taken
+    if (updateData.username && updateData.username !== user.username) {
+      const existingUser = await this.userRepository.findOne({
+        where: { username: updateData.username },
+      });
+
+      if (existingUser) {
+        throw new ConflictException(
+          'این نام کاربری قبلاً توسط کاربر دیگری استفاده شده است',
+        );
+      }
+    }
+
+    // Update user fields - handle empty strings as null
+    if (updateData.username !== undefined)
+      user.username = updateData.username || undefined;
+    if (updateData.firstName !== undefined)
+      user.firstName = updateData.firstName || undefined;
+    if (updateData.lastName !== undefined)
+      user.lastName = updateData.lastName || undefined;
+    if (updateData.bankCardNumber !== undefined)
+      user.bankCardNumber = updateData.bankCardNumber || undefined;
+    if (updateData.shebaNumber !== undefined)
+      user.shebaNumber = updateData.shebaNumber || undefined;
+
+    // Save the updated user
+    await this.userRepository.save(user);
+
+    // Return the updated profile
+    return this.getProfile(userId);
   }
 
   private convertToPersianDate(date: Date): string {
@@ -61,10 +110,10 @@ export class UsersService {
 
     // Simple conversion (approximate)
     const persianYear = gregorianYear - 621;
-    const persianMonth = gregorianMonth > 3 ? gregorianMonth - 3 : gregorianMonth + 9;
+    const persianMonth =
+      gregorianMonth > 3 ? gregorianMonth - 3 : gregorianMonth + 9;
     const persianDay = gregorianDay;
 
     return `${persianYear.toString().padStart(4, '0')}/${persianMonth.toString().padStart(2, '0')}/${persianDay.toString().padStart(2, '0')}`;
   }
 }
-

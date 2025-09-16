@@ -59,7 +59,9 @@ describe('ReferralSystem', () => {
 
     authService = module.get<AuthService>(AuthService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
-    otpCodeRepository = module.get<Repository<OtpCode>>(getRepositoryToken(OtpCode));
+    otpCodeRepository = module.get<Repository<OtpCode>>(
+      getRepositoryToken(OtpCode),
+    );
     jwtService = module.get<JwtService>(JwtService);
   });
 
@@ -72,7 +74,9 @@ describe('ReferralSystem', () => {
       // Mock بررسی منحصر به فرد بودن
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      const referralCode = await (authService as any).generateUniqueReferralCode();
+      const referralCode = await (
+        authService as any
+      ).generateUniqueReferralCode();
 
       expect(referralCode).toMatch(/^\d{6}$/);
       expect(parseInt(referralCode)).toBeGreaterThanOrEqual(100000);
@@ -85,7 +89,9 @@ describe('ReferralSystem', () => {
         .mockResolvedValueOnce({ id: 1 }) // کد اول تکراری
         .mockResolvedValueOnce(null); // کد دوم منحصر به فرد
 
-      const referralCode = await (authService as any).generateUniqueReferralCode();
+      const referralCode = await (
+        authService as any
+      ).generateUniqueReferralCode();
 
       expect(referralCode).toMatch(/^\d{6}$/);
       expect(mockUserRepository.findOne).toHaveBeenCalledTimes(2);
@@ -100,7 +106,10 @@ describe('ReferralSystem', () => {
       };
 
       // Mock کاربر موجود با کد رفرال
-      mockUserRepository.findOne.mockResolvedValue({ id: 1, referralCode: '123456' });
+      mockUserRepository.findOne.mockResolvedValue({
+        id: 1,
+        referralCode: '123456',
+      });
       mockOtpCodeRepository.create.mockReturnValue({});
       mockOtpCodeRepository.save.mockResolvedValue({});
 
@@ -121,7 +130,9 @@ describe('ReferralSystem', () => {
       // Mock عدم وجود کد رفرال
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      await expect(authService.requestOtp(dto)).rejects.toThrow('Invalid referral code');
+      await expect(authService.requestOtp(dto)).rejects.toThrow(
+        'Invalid referral code',
+      );
     });
   });
 
@@ -177,7 +188,11 @@ describe('ReferralSystem', () => {
 
       // Mock وجود کاربر
       mockUserRepository.findOne
-        .mockResolvedValueOnce({ id: 10, phoneNumber: '09123456789', referredBy: null }) // بررسی شماره تلفن
+        .mockResolvedValueOnce({
+          id: 10,
+          phoneNumber: '09123456789',
+          referredBy: null,
+        }) // بررسی شماره تلفن
         .mockResolvedValueOnce({ id: 1, referralCode: '123456' }); // اعتبارسنجی کد رفرال
 
       // Mock OTP معتبر
@@ -257,7 +272,9 @@ describe('ReferralSystem', () => {
         .mockResolvedValueOnce(null) // بررسی شماره تلفن
         .mockResolvedValueOnce(null); // کد رفرال نامعتبر
 
-      await expect(authService.verifyOtp(dto)).rejects.toThrow('Invalid referral code');
+      await expect(authService.verifyOtp(dto)).rejects.toThrow(
+        'Invalid referral code',
+      );
     });
 
     it('باید OTP نامعتبر را رد کند', async () => {
@@ -269,7 +286,9 @@ describe('ReferralSystem', () => {
       // Mock عدم وجود OTP
       mockOtpCodeRepository.findOne.mockResolvedValue(null);
 
-      await expect(authService.verifyOtp(dto)).rejects.toThrow('Invalid OTP code');
+      await expect(authService.verifyOtp(dto)).rejects.toThrow(
+        'Invalid OTP code',
+      );
     });
 
     it('باید OTP منقضی شده را رد کند', async () => {
@@ -287,8 +306,9 @@ describe('ReferralSystem', () => {
         expiresAt: new Date(Date.now() - 10000), // گذشته
       });
 
-      await expect(authService.verifyOtp(dto)).rejects.toThrow('OTP code has expired');
+      await expect(authService.verifyOtp(dto)).rejects.toThrow(
+        'OTP code has expired',
+      );
     });
   });
 });
-

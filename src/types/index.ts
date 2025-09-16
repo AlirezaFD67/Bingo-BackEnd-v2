@@ -1,6 +1,17 @@
 // Auth types
 export type { User as AuthUser } from './auth';
-export type { LoginDto, RegisterDto, AuthResponse, RequestOtpDto, RequestOtpResponse, VerifyOtpDto, VerifyOtpResponse, RefreshTokenDto, JwtPayload, SessionData } from './auth';
+export type {
+  LoginDto,
+  RegisterDto,
+  AuthResponse,
+  RequestOtpDto,
+  RequestOtpResponse,
+  VerifyOtpDto,
+  VerifyOtpResponse,
+  RefreshTokenDto,
+  JwtPayload,
+  SessionData,
+} from './auth';
 export { UserRole, AuthProvider } from './auth';
 
 // User types

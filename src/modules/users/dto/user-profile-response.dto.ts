@@ -1,5 +1,13 @@
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+
+const formatBankCardNumber = ({ value }: { value: unknown }): string | undefined => {
+  if (typeof value === 'string' && value) {
+    // Remove spaces to ensure it's always displayed without spaces
+    return value.replace(/\s+/g, '');
+  }
+  return value as string | undefined;
+};
 
 export class ReservationInfoDto {
   @ApiProperty({
@@ -74,10 +82,11 @@ export class UserProfileResponseDto {
 
   @ApiProperty({
     description: 'شماره کارت بانکی',
-    example: '1234 5678 9012 3456',
+    example: '1111222233334444',
     required: false,
   })
   @Expose()
+  @Transform(formatBankCardNumber)
   bankCardNumber?: string;
 
   @ApiProperty({

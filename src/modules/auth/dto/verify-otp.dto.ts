@@ -1,12 +1,20 @@
-import { IsString, IsOptional, Length, Matches, ValidateIf } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  Length,
+  Matches,
+  ValidateIf,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyOtpDto {
   @IsString()
-  @Matches(/^09\d{9}$/, { message: 'Phone number must be in format 09xxxxxxxxx' })
+  @Matches(/^09\d{9}$/, {
+    message: 'Phone number must be in format 09xxxxxxxxx',
+  })
   @ApiProperty({
     example: '09112223332',
-    description: 'شماره تلفن همراه کاربر (۱۱ رقم، شروع با ۰۹)'
+    description: 'شماره تلفن همراه کاربر (۱۱ رقم، شروع با ۰۹)',
   })
   phoneNumber: string;
 
@@ -15,7 +23,7 @@ export class VerifyOtpDto {
   @Matches(/^\d{4}$/, { message: 'OTP code must contain only digits' })
   @ApiProperty({
     example: '1234',
-    description: 'کد OTP ۴ رقمی'
+    description: 'کد OTP ۴ رقمی',
   })
   code: string;
 
@@ -26,8 +34,7 @@ export class VerifyOtpDto {
   @ApiProperty({
     example: '',
     description: 'کد رفرال ورودی (اختیاری، ۶ کاراکتر)',
-    required: false
+    required: false,
   })
   incomingReferral?: string;
 }
-

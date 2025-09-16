@@ -1,4 +1,9 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ConfigService } from '@nestjs/config';
@@ -15,7 +20,9 @@ export class ApiClientInterceptor implements NestInterceptor {
     request.startTime = Date.now();
 
     // Log request
-    console.log(`[${new Date().toISOString()}] ${request.method} ${request.url}`);
+    console.log(
+      `[${new Date().toISOString()}] ${request.method} ${request.url}`,
+    );
 
     return next.handle().pipe(
       // Add response metadata

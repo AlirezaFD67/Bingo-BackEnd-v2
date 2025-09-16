@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -37,7 +41,9 @@ export class AuthService {
       });
 
       if (!referralUser) {
-        throw new BadRequestException(ERROR_MESSAGES.INVALID_REFERRAL_CODE.error);
+        throw new BadRequestException(
+          ERROR_MESSAGES.INVALID_REFERRAL_CODE.error,
+        );
       }
     }
 
@@ -85,7 +91,9 @@ export class AuthService {
       });
 
       if (!referralUser) {
-        throw new BadRequestException(ERROR_MESSAGES.INVALID_REFERRAL_CODE.error);
+        throw new BadRequestException(
+          ERROR_MESSAGES.INVALID_REFERRAL_CODE.error,
+        );
       }
     }
 
@@ -99,7 +107,9 @@ export class AuthService {
     });
 
     if (!otpCode) {
-      console.log(`OTP verification failed: No OTP found for phone ${phoneNumber} with code ${code}`);
+      console.log(
+        `OTP verification failed: No OTP found for phone ${phoneNumber} with code ${code}`,
+      );
       throw new BadRequestException('Invalid OTP code');
     }
 
@@ -125,7 +135,12 @@ export class AuthService {
 
       user = this.userRepository.create({
         phoneNumber,
-        referredBy: incomingReferral && incomingReferral.trim() !== '' ? incomingReferral : (otpCode.incomingReferral && otpCode.incomingReferral.trim() !== '' ? otpCode.incomingReferral : undefined),
+        referredBy:
+          incomingReferral && incomingReferral.trim() !== ''
+            ? incomingReferral
+            : otpCode.incomingReferral && otpCode.incomingReferral.trim() !== ''
+              ? otpCode.incomingReferral
+              : undefined,
         referralCode,
       });
       await this.userRepository.save(user);
@@ -169,9 +184,9 @@ export class AuthService {
       // اگر بعد از چندین تلاش موفق نشد، کد را با timestamp ترکیب کن
       if (attempts >= maxAttempts && !isUnique) {
         const timestamp = Date.now().toString().slice(-4); // ۴ رقم آخر timestamp
-        referralCode = Math.floor(1000 + Math.random() * 9000).toString() + timestamp;
+        referralCode =
+          Math.floor(1000 + Math.random() * 9000).toString() + timestamp;
       }
-
     } while (!isUnique && attempts < maxAttempts + 1);
 
     return referralCode;

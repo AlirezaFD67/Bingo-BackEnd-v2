@@ -13,7 +13,9 @@ import { Reservation } from '../../entities/reservation.entity';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'your-super-secret-jwt-key-here-change-in-production',
+        secret:
+          configService.get<string>('JWT_SECRET') ||
+          'your-super-secret-jwt-key-here-change-in-production',
         signOptions: { expiresIn: '7d' },
       }),
       inject: [ConfigService],

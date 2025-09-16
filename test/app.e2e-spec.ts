@@ -17,9 +17,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('/api (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/api')
-      .expect(404); // Should return 404 as there's no root controller for /api
+    return request(app.getHttpServer()).get('/api').expect(404); // Should return 404 as there's no root controller for /api
   });
 
   it('should have CORS enabled', () => {

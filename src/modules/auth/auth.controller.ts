@@ -14,16 +14,16 @@ export class AuthController {
   @Post('request-otp')
   @ApiOperation({
     summary: 'درخواست کد OTP',
-    description: 'ارسال کد OTP به شماره تلفن کاربر برای احراز هویت'
+    description: 'ارسال کد OTP به شماره تلفن کاربر برای احراز هویت',
   })
   @ApiResponse({
     status: 201,
     description: 'کد OTP با موفقیت ارسال شد',
-    type: RequestOtpResponseDto
+    type: RequestOtpResponseDto,
   })
   @ApiResponse({
     status: 400,
-    description: 'ورودی نامعتبر'
+    description: 'ورودی نامعتبر',
   })
   async requestOtp(@Body() dto: RequestOtpDto): Promise<RequestOtpResponseDto> {
     return this.authService.requestOtp(dto);
@@ -32,23 +32,22 @@ export class AuthController {
   @Post('verify-otp')
   @ApiOperation({
     summary: 'تایید کد OTP',
-    description: 'تایید کد OTP و ایجاد توکن دسترسی'
+    description: 'تایید کد OTP و ایجاد توکن دسترسی',
   })
   @ApiResponse({
     status: 201,
     description: 'کد OTP تایید شد و توکن ایجاد گردید',
-    type: VerifyOtpResponseDto
+    type: VerifyOtpResponseDto,
   })
   @ApiResponse({
     status: 400,
-    description: 'کد OTP نامعتبر یا منقضی شده'
+    description: 'کد OTP نامعتبر یا منقضی شده',
   })
   @ApiResponse({
     status: 401,
-    description: 'کد OTP اشتباه'
+    description: 'کد OTP اشتباه',
   })
   async verifyOtp(@Body() dto: VerifyOtpDto): Promise<VerifyOtpResponseDto> {
     return this.authService.verifyOtp(dto);
   }
 }
-

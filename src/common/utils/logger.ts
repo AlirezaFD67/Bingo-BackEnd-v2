@@ -17,10 +17,7 @@ export const logger: Logger = createLogger({
   ),
   transports: [
     new transports.Console({
-      format: format.combine(
-        format.colorize(),
-        format.simple(),
-      ),
+      format: format.combine(format.colorize(), format.simple()),
     }),
     new transports.File({
       filename: 'logs/error.log',
@@ -33,20 +30,17 @@ export const logger: Logger = createLogger({
     }),
     new transports.File({
       filename: 'logs/combined.log',
-      format: format.combine(
-        format.timestamp(),
-        format.json(),
-      ),
+      format: format.combine(format.timestamp(), format.json()),
     }),
   ],
 });
 
 // Handle uncaught exceptions
 logger.exceptions.handle(
-  new transports.File({ filename: 'logs/exceptions.log' })
+  new transports.File({ filename: 'logs/exceptions.log' }),
 );
 
 // Handle unhandled promise rejections
 logger.rejections.handle(
-  new transports.File({ filename: 'logs/rejections.log' })
+  new transports.File({ filename: 'logs/rejections.log' }),
 );
