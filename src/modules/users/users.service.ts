@@ -148,6 +148,50 @@ export class UsersService {
     return this.getProfile(userId);
   }
 
+  async updateUserById(
+    id: number,
+    updateData: UpdateUserProfileDto,
+  ): Promise<AdminUserResponseDto> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+
+    // Check if username is being updated and if it's already taken
+    if (updateData.username && updateData.username !== user.username) {
+      const existingUser = await this.userRepository.findOne({
+        where: { username: updateData.username },
+      });
+
+      if (existingUser) {
+        throw new ConflictException(
+          'این نام کاربری قبلاً توسط کاربر دیگری استفاده شده است',
+        );
+      }
+    }
+
+    // Update user fields - handle empty strings as null
+    if (updateData.username !== undefined)
+      user.username = updateData.username || undefined;
+    if (updateData.firstName !== undefined)
+      user.firstName = updateData.firstName || undefined;
+    if (updateData.lastName !== undefined)
+      user.lastName = updateData.lastName || undefined;
+    if (updateData.bankCardNumber !== undefined)
+      user.bankCardNumber = updateData.bankCardNumber || undefined;
+    if (updateData.shebaNumber !== undefined)
+      user.shebaNumber = updateData.shebaNumber || undefined;
+
+    // Save the updated user
+    await this.userRepository.save(user);
+
+    // Return the updated user data
+    return this.getUserById(id);
+  }
+
   private convertToPersianDate(date: Date): string {
     // Convert Gregorian date to Persian (Jalali) calendar
     // This is a simple implementation - you might want to use a proper Persian date library
