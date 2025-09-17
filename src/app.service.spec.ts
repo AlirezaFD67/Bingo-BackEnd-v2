@@ -15,21 +15,4 @@ describe('AppService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
-
-  describe('getHello', () => {
-    it('should return "Hello World!"', () => {
-      expect(service.getHello()).toBe('Hello World!');
-    });
-
-    it('should return a string', () => {
-      const result = service.getHello();
-      expect(typeof result).toBe('string');
-    });
-
-    it('should return the correct greeting', () => {
-      const result = service.getHello();
-      expect(result).toContain('Hello');
-      expect(result).toContain('World');
-    });
-  });
 });

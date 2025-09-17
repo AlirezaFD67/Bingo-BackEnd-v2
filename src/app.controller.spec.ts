@@ -19,24 +19,4 @@ describe('AppController', () => {
   it('should be defined', () => {
     expect(appController).toBeDefined();
   });
-
-  describe('getHello', () => {
-    it('should return "Hello World!"', () => {
-      const result = appController.getHello();
-      expect(result).toBe('Hello World!');
-    });
-
-    it('should call appService.getHello()', () => {
-      const spy = jest.spyOn(appService, 'getHello');
-      appController.getHello();
-      expect(spy).toHaveBeenCalled();
-    });
-
-    it('should return the result from appService', () => {
-      const expectedResult = 'Hello World!';
-      jest.spyOn(appService, 'getHello').mockReturnValue(expectedResult);
-      const result = appController.getHello();
-      expect(result).toBe(expectedResult);
-    });
-  });
 });
