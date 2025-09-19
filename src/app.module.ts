@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { WheelModule } from './modules/wheel/wheel.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ApiClientInterceptor } from './common/interceptors/api-client.interceptor';
 
@@ -31,6 +32,7 @@ import { ApiClientInterceptor } from './common/interceptors/api-client.intercept
     AuthModule,
     UsersModule,
     AdminModule,
+    WheelModule,
   ],
   controllers: [AppController],
   providers: [

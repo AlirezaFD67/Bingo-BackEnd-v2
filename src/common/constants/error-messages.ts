@@ -21,4 +21,6 @@ export const ERROR_MESSAGES = {
   INVALID_FILE_TYPE: { error: 'Invalid file type', status: 415 },
   UPLOAD_FAILED: { error: 'Upload failed', status: 500 },
   TOO_MANY_REQUESTS: { error: 'Too many requests', status: 429 },
+  WHEEL_SPIN_LIMIT_EXCEEDED: { error: 'شما فقط یکبار در 24 ساعت می‌توانید گردونه بچرخانید', status: 400 },
+  INVALID_WHEEL_PRIZE_AMOUNT: { error: 'مقدار جایزه نامعتبر است', status: 400 },
 };
