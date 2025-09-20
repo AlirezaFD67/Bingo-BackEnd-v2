@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../../entities/user.entity';
 import { OtpCode } from '../../entities/otp-code.entity';
+import { WalletTransaction } from '../../entities/wallet-transaction.entity';
+import { AppSettings } from '../../entities/app-settings.entity';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { SmsService } from './sms.service';
@@ -13,7 +15,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, OtpCode]),
+    TypeOrmModule.forFeature([User, OtpCode, WalletTransaction, AppSettings]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
