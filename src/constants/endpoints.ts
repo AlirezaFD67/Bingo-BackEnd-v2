@@ -10,6 +10,10 @@ export const ENDPOINTS = {
   ADMIN: {
     BASE: '/admin',
     USERS: '/admin/users',
+    WALLET: {
+      BASE: '/admin/wallet',
+      TRANSACTIONS: '/admin/wallet/transactions',
+    },
   },
 
   // API Documentation

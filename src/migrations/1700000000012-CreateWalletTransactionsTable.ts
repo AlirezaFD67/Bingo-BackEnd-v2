@@ -16,7 +16,10 @@ export class CreateWalletTransactionsTable1700000000012
           'withdraw',
           'prize',
           'referral_bonus',
-          'game_fee'
+          'game_fee',
+          'bingo_line',
+          'bingo_full_card',
+          'wheel_spin'
         )
       `);
 
