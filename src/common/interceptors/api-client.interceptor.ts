@@ -26,11 +26,23 @@ export class ApiClientInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       // Add response metadata
-      map((data) => ({
-        ...data,
-        timestamp: new Date().toISOString(),
-        duration: Date.now() - request.startTime,
-      })),
+      map((data) => {
+        // If data is an array, wrap it properly
+        if (Array.isArray(data)) {
+          return {
+            data,
+            timestamp: new Date().toISOString(),
+            duration: Date.now() - request.startTime,
+          };
+        }
+        
+        // If data is an object, spread it
+        return {
+          ...data,
+          timestamp: new Date().toISOString(),
+          duration: Date.now() - request.startTime,
+        };
+      }),
     );
   }
 }
