@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { WheelModule } from './modules/wheel/wheel.module';
+import { WalletModule } from './modules/wallet/wallet.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ApiClientInterceptor } from './common/interceptors/api-client.interceptor';
 
@@ -33,6 +34,7 @@ import { ApiClientInterceptor } from './common/interceptors/api-client.intercept
     UsersModule,
     AdminModule,
     WheelModule,
+    WalletModule,
   ],
   controllers: [AppController],
   providers: [

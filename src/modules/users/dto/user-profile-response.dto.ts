@@ -106,6 +106,13 @@ export class UserProfileResponseDto {
   role: string;
 
   @ApiProperty({
+    description: 'موجودی کیف پول (به ریال)',
+    example: 500000,
+  })
+  @Expose()
+  walletBalance: number;
+
+  @ApiProperty({
     description: 'تاریخ ایجاد حساب (میلادی)',
     example: '2024-06-20T12:34:56.789Z',
   })

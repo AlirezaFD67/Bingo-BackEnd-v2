@@ -12,6 +12,7 @@ export class CreateWalletTransactionsTable1700000000012
     // Create enum types first
     await queryRunner.query(`
         CREATE TYPE wallet_transactions_type_enum AS ENUM (
+          'charge',
           'deposit',
           'withdraw',
           'prize',

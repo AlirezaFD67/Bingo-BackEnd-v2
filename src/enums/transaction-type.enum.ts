@@ -1,4 +1,5 @@
 export enum TransactionType {
+  CHARGE = 'charge', // شارژ کیف پول
   DEPOSIT = 'deposit', // واریز وجه
   WITHDRAW = 'withdraw', // برداشت وجه
   PRIZE = 'prize', // جایزه

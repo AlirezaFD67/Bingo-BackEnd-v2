@@ -45,6 +45,7 @@ export class UsersService {
       bankCardNumber: user.bankCardNumber,
       shebaNumber: user.shebaNumber,
       role: user.role,
+      walletBalance: Number(user.walletBalance),
       createdAt: user.createdAt,
       createdAtPersian,
       referralCode: user.referralCode,
@@ -74,6 +75,7 @@ export class UsersService {
       referralCode: user.referralCode,
       referredBy: user.referredBy,
       role: user.role,
+      walletBalance: Number(user.walletBalance),
       createdAt: user.createdAt,
       createdAtPersian: this.convertToPersianDate(user.createdAt),
     }));
@@ -99,6 +101,7 @@ export class UsersService {
       referralCode: user.referralCode,
       referredBy: user.referredBy,
       role: user.role,
+      walletBalance: Number(user.walletBalance),
       createdAt: user.createdAt,
       createdAtPersian: this.convertToPersianDate(user.createdAt),
     };
