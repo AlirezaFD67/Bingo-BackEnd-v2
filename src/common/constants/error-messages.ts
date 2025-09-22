@@ -28,4 +28,9 @@ export const ERROR_MESSAGES = {
   INVALID_ENTRY_FEE: { error: 'هزینه ورود نامعتبر است', status: 400 },
   INVALID_START_TIMER: { error: 'تایمر شروع نامعتبر است', status: 400 },
   INVALID_MIN_PLAYERS: { error: 'حداقل تعداد بازیکنان نامعتبر است', status: 400 },
+  INSUFFICIENT_WALLET_BALANCE: { error: 'موجودی کیف پول کافی نیست', status: 400 },
+  TRANSACTION_NOT_FOUND: { error: 'تراکنش یافت نشد', status: 404 },
+  TRANSACTION_NOT_WITHDRAW: { error: 'این تراکنش برداشت نیست', status: 400 },
+  TRANSACTION_NOT_PENDING: { error: 'تراکنش قابل تایید نیست', status: 400 },
+  TRANSACTION_CANNOT_BE_REJECTED: { error: 'تراکنش قابل رد نیست', status: 400 },
 };

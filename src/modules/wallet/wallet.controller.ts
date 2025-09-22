@@ -16,6 +16,8 @@ import {
 import { WalletService } from './wallet.service';
 import { ChargeWalletDto } from './dto/charge-wallet.dto';
 import { ChargeWalletResponseDto } from './dto/charge-wallet-response.dto';
+import { WithdrawWalletDto } from './dto/withdraw-wallet.dto';
+import { WithdrawWalletResponseDto } from './dto/withdraw-wallet-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('wallet')
@@ -54,5 +56,36 @@ export class WalletController {
   ): Promise<ChargeWalletResponseDto> {
     const userId = req.user.id;
     return this.walletService.chargeWallet(userId, chargeDto);
+  }
+
+  @Post('withdraw')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'برداشت از کیف پول',
+    description: 'درخواست برداشت از کیف پول کاربر با مبلغ مشخص شده',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'درخواست برداشت ثبت شد.',
+    type: WithdrawWalletResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'داده‌های ورودی نامعتبر یا موجودی کافی نیست',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'کاربر احراز هویت نشده',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'کاربر یافت نشد',
+  })
+  async withdrawWallet(
+    @Body() withdrawDto: WithdrawWalletDto,
+    @Request() req: any,
+  ): Promise<WithdrawWalletResponseDto> {
+    const userId = req.user.id;
+    return this.walletService.withdrawWallet(userId, withdrawDto);
   }
 }
