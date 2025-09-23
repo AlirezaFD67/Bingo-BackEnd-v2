@@ -8,13 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { GameRoom } from './game-room.entity';
-
-export enum ActiveRoomStatus {
-  PENDING = 'pending',
-  STARTED = 'started',
-  FINISHED = 'finished',
-  DEACTIVATED = 'deactivated',
-}
+import { RoomStatus } from '../enums/room-status.enum';
 
 @Entity('active_room_global')
 export class ActiveRoomGlobal {
@@ -24,16 +18,16 @@ export class ActiveRoomGlobal {
   @Column({ type: 'integer', nullable: false })
   gameRoomId: number;
 
-  @Column({ type: 'timestamp', nullable: false })
-  startTime: Date;
+  @Column({ type: 'integer', nullable: false })
+  startTime: number; // Remaining seconds
 
   @Column({
     type: 'varchar',
     length: 20,
+    default: RoomStatus.PENDING,
     nullable: false,
-    default: ActiveRoomStatus.PENDING,
   })
-  status: ActiveRoomStatus;
+  status: RoomStatus;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -45,4 +39,3 @@ export class ActiveRoomGlobal {
   @JoinColumn({ name: 'gameRoomId' })
   gameRoom: GameRoom;
 }
-

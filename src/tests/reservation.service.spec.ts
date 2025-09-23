@@ -5,7 +5,8 @@ import { Repository } from 'typeorm';
 import { ReservationService } from '../modules/reservation/reservation.service';
 import { Reservation } from '../entities/reservation.entity';
 import { GameRoom } from '../entities/game-room.entity';
-import { ActiveRoomGlobal, ActiveRoomStatus } from '../entities/active-room-global.entity';
+import { ActiveRoomGlobal } from '../entities/active-room-global.entity';
+import { RoomStatus } from '../enums/room-status.enum';
 
 describe('ReservationService', () => {
   let service: ReservationService;
@@ -70,14 +71,14 @@ describe('ReservationService', () => {
     });
 
     it('should throw BadRequestException when room is not pending', async () => {
-      const activeRoom = { id: 1, status: ActiveRoomStatus.STARTED };
+      const activeRoom = { id: 1, status: RoomStatus.STARTED };
       mockActiveRoomRepository.findOne.mockResolvedValue(activeRoom);
 
       await expect(service.reserve(userId, dto)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when game room not found', async () => {
-      const activeRoom = { id: 1, status: ActiveRoomStatus.PENDING, gameRoomId: 1 };
+      const activeRoom = { id: 1, status: RoomStatus.PENDING, gameRoomId: 1 };
       mockActiveRoomRepository.findOne.mockResolvedValue(activeRoom);
       mockGameRoomRepository.findOne.mockResolvedValue(null);
 
@@ -85,7 +86,7 @@ describe('ReservationService', () => {
     });
 
     it('should create reservation successfully', async () => {
-      const activeRoom = { id: 1, status: ActiveRoomStatus.PENDING, gameRoomId: 1 };
+      const activeRoom = { id: 1, status: RoomStatus.PENDING, gameRoomId: 1 };
       const gameRoom = { id: 1, entryFee: 1000 };
       const reservation = { id: 123, userId, cardCount: 2, entryFee: 1000, activeRoomId: 1 };
 

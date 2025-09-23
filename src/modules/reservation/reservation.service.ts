@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Reservation } from '../../entities/reservation.entity';
 import { GameRoom } from '../../entities/game-room.entity';
-import { ActiveRoomGlobal, ActiveRoomStatus } from '../../entities/active-room-global.entity';
+import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
+import { RoomStatus } from '../../enums/room-status.enum';
 import { ReserveRequestDto } from './dto/reserve-request.dto';
 
 @Injectable()
@@ -26,7 +27,7 @@ export class ReservationService {
     if (!active) {
       throw new NotFoundException('Active room not found');
     }
-    if (active.status !== ActiveRoomStatus.PENDING) {
+    if (active.status !== RoomStatus.PENDING) {
       throw new BadRequestException('Room is not pending');
     }
 

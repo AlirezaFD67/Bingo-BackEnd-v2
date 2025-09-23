@@ -27,7 +27,7 @@ export class CreateGlobalActiveRoomTable1700000000003
           },
           {
             name: 'startTime',
-            type: 'timestamp',
+            type: 'integer',
             isNullable: false,
           },
           {
