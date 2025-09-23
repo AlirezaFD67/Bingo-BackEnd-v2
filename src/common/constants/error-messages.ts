@@ -34,7 +34,6 @@ export const ERROR_MESSAGES = {
   TRANSACTION_NOT_PENDING: { error: 'تراکنش قابل تایید نیست', status: 400 },
   TRANSACTION_CANNOT_BE_REJECTED: { error: 'تراکنش قابل رد نیست', status: 400 },
   ACTIVE_ROOM_NOT_FOUND: { error: 'Active room not found', status: 404 },
-  GAME_ROOM_NOT_FOUND: { error: 'Game room not found', status: 404 },
   ROOM_NOT_PENDING: { error: 'Room is not pending', status: 400 },
   INVALID_USER: { error: 'Invalid user', status: 400 },
 };
