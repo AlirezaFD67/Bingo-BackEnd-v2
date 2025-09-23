@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { SocketMockService } from './socket-mock.service';
 import { PendingRoomsMockResponseDto } from './dto/pending-rooms-mock.dto';
 import { RoomsService } from '../socket/rooms.service';
+import { RoomInfoResponseDto } from '../socket/dto/room-info-response.dto';
 
 @ApiTags('Socket Testing')
 @Controller('socket-test')
@@ -96,6 +97,76 @@ export class SocketMockController {
       }
       
       return mockData;
+    }
+  }
+
+  @Get('active-room-info')
+  @ApiOperation({
+    summary: 'Get Active Room Info (Socket Mock)',
+    description: `
+    **Socket Namespace:** \`/rooms\`
+    
+    **Send Event:** \`roomInfoRequest\`
+    - Data: \`{ activeRoomId: number }\`
+    
+    **Receive Event:** \`roomInfo\`
+    - Data: Room information including status, remaining seconds, available cards, and player count
+    
+    **Socket Connection:**
+    \`\`\`javascript
+    const socket = io('http://localhost:3006/rooms');
+    
+    socket.emit('roomInfoRequest', { activeRoomId: 1 });
+    
+    socket.on('roomInfo', (data) => {
+      console.log('Room Info:', data);
+      // Response format:
+      // {
+      //   "status": "started",
+      //   "remainingSeconds": 120,
+      //   "availableCards": 15,
+      //   "playerCount": 5
+      // }
+    });
+    \`\`\`
+    
+    **Response Format:**
+    \`\`\`json
+    {
+      "status": "started",
+      "remainingSeconds": 120,
+      "availableCards": 15,
+      "playerCount": 5
+    }
+    \`\`\`
+    `
+  })
+  @ApiQuery({
+    name: 'activeRoomId',
+    required: true,
+    type: 'number',
+    description: 'Active room ID to get information for',
+    example: 1
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Room information including status, remaining seconds, available cards, and player count',
+    type: RoomInfoResponseDto,
+  })
+  async getRoomInfo(
+    @Query('activeRoomId') activeRoomId: number
+  ): Promise<RoomInfoResponseDto> {
+    try {
+      // Get real data from socket service
+      return await this.roomsService.getRoomInfo(activeRoomId);
+    } catch (error) {
+      // Fallback to mock data if real service fails
+      return {
+        status: 'started',
+        remainingSeconds: 120,
+        availableCards: 15,
+        playerCount: 5,
+      };
     }
   }
 

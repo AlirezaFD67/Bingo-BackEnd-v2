@@ -16,6 +16,7 @@ describe('ActiveRoomGlobalSocket', () => {
 
   const mockActiveRoomRepository = {
     find: jest.fn(),
+    findOne: jest.fn(),
   };
 
   const mockGameRoomRepository = {
@@ -24,6 +25,12 @@ describe('ActiveRoomGlobalSocket', () => {
 
   const mockReservationRepository = {
     createQueryBuilder: jest.fn(),
+  };
+
+  const mockQueryBuilder = {
+    where: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    getRawOne: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -131,6 +138,52 @@ describe('ActiveRoomGlobalSocket', () => {
 
       await expect(roomsService.getPendingRooms()).rejects.toThrow('Database error');
     });
+
+    it('should get room info by activeRoomId', async () => {
+      const mockActiveRoom = {
+        id: 1,
+        gameRoomId: 1,
+        remainingSeconds: 120,
+        status: 'started',
+        gameRoom: {
+          id: 1,
+          entryFee: 100000,
+          minPlayers: 3,
+        },
+      };
+
+      const mockReservedCards = { totalCards: '15' };
+      const mockPlayerCount = { count: '5' };
+
+      mockActiveRoomRepository.findOne.mockResolvedValue(mockActiveRoom);
+      mockReservationRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock for reserved cards query
+      mockQueryBuilder.getRawOne
+        .mockResolvedValueOnce(mockReservedCards) // First call for reserved cards
+        .mockResolvedValueOnce(mockPlayerCount); // Second call for player count
+
+      const result = await roomsService.getRoomInfo(1);
+
+      expect(result).toEqual({
+        status: 'started',
+        remainingSeconds: 120,
+        availableCards: 15, // 30 - 15 = 15
+        playerCount: 5,
+      });
+    });
+
+    it('should throw error when active room not found', async () => {
+      mockActiveRoomRepository.findOne.mockResolvedValue(null);
+
+      await expect(roomsService.getRoomInfo(999)).rejects.toThrow('Active room with ID 999 not found');
+    });
+
+    it('should handle error when getting room info', async () => {
+      mockActiveRoomRepository.findOne.mockRejectedValue(new Error('Database error'));
+
+      await expect(roomsService.getRoomInfo(1)).rejects.toThrow('Database error');
+    });
   });
 
   describe('Socket Events', () => {
@@ -210,6 +263,51 @@ describe('ActiveRoomGlobalSocket', () => {
 
       expect(gateway['server'].emit).toHaveBeenCalledWith('error', {
         message: 'Failed to fetch active room global',
+      });
+    });
+
+    it('should emit roomInfo event with room data', async () => {
+      gateway['server'] = {
+        emit: jest.fn(),
+      } as any;
+
+      const mockRoomInfo = {
+        status: 'started',
+        remainingSeconds: 120,
+        availableCards: 15,
+        playerCount: 5,
+      };
+
+      jest.spyOn(roomsService, 'getRoomInfo').mockResolvedValue(mockRoomInfo);
+
+      await gateway.handleRoomInfoRequest({ activeRoomId: 1 });
+
+      expect(gateway['server'].emit).toHaveBeenCalledWith('roomInfo', mockRoomInfo);
+    });
+
+    it('should emit error when activeRoomId is missing', async () => {
+      gateway['server'] = {
+        emit: jest.fn(),
+      } as any;
+
+      await gateway.handleRoomInfoRequest({ activeRoomId: undefined as any });
+
+      expect(gateway['server'].emit).toHaveBeenCalledWith('error', {
+        message: 'activeRoomId is required',
+      });
+    });
+
+    it('should emit error when room info service fails', async () => {
+      gateway['server'] = {
+        emit: jest.fn(),
+      } as any;
+
+      jest.spyOn(roomsService, 'getRoomInfo').mockRejectedValue(new Error('Service error'));
+
+      await gateway.handleRoomInfoRequest({ activeRoomId: 1 });
+
+      expect(gateway['server'].emit).toHaveBeenCalledWith('error', {
+        message: 'Failed to fetch room info',
       });
     });
   });

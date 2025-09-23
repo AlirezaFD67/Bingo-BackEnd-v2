@@ -10,6 +10,7 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { PendingRoomsResponseDto } from './dto/pending-rooms-response.dto';
+import { RoomInfoResponseDto } from './dto/room-info-response.dto';
 
 @WebSocketGateway({
   namespace: '/rooms',
@@ -57,6 +58,28 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } catch (error) {
       this.logger.error('Error handling activeRoomGlobalRequest:', error);
       this.server.emit('error', { message: 'Failed to fetch active room global' });
+    }
+  }
+
+  @SubscribeMessage('roomInfoRequest')
+  async handleRoomInfoRequest(@MessageBody() data: { activeRoomId: number }) {
+    try {
+      this.logger.log(`Received roomInfoRequest for activeRoomId: ${data.activeRoomId}`);
+      
+      if (!data.activeRoomId) {
+        this.server.emit('error', { message: 'activeRoomId is required' });
+        return;
+      }
+      
+      const roomInfo = await this.roomsService.getRoomInfo(data.activeRoomId);
+      
+      // Send response back to the client
+      this.server.emit('roomInfo', roomInfo);
+      
+      this.logger.log(`Sent room info for activeRoomId ${data.activeRoomId}: ${JSON.stringify(roomInfo)}`);
+    } catch (error) {
+      this.logger.error('Error handling roomInfoRequest:', error);
+      this.server.emit('error', { message: 'Failed to fetch room info' });
     }
   }
 }
