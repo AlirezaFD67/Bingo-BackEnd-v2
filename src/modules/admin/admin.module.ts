@@ -10,22 +10,24 @@ import { UsersService } from '../users/users.service';
 import { GameRoomsService } from './game-rooms.service';
 import { SettingsService } from './settings.service';
 import { WalletService } from './wallet.service';
+import { AutoTimerService } from './auto-timer.service';
 import { User } from '../../entities/user.entity';
 import { Reservation } from '../../entities/reservation.entity';
 import { GameRoom } from '../../entities/game-room.entity';
 import { AppSettings } from '../../entities/app-settings.entity';
 import { WalletTransaction } from '../../entities/wallet-transaction.entity';
+import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Reservation, GameRoom, AppSettings, WalletTransaction]),
+    TypeOrmModule.forFeature([User, Reservation, GameRoom, AppSettings, WalletTransaction, ActiveRoomGlobal]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here-change-in-production',
       signOptions: { expiresIn: '7d' },
     }),
   ],
   controllers: [AdminController, GameRoomsController, SettingsController, WalletController],
-  providers: [UsersService, GameRoomsService, SettingsService, WalletService],
+  providers: [UsersService, GameRoomsService, SettingsService, WalletService, AutoTimerService],
 })
 export class AdminModule {}
