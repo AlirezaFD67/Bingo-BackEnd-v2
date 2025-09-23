@@ -70,7 +70,7 @@ export class AutoTimerService implements OnModuleInit {
       // Create new active room
       const activeRoom = this.activeRoomRepository.create({
         gameRoomId: gameRoom.id,
-        startTime: gameRoom.startTimer, // Initialize with startTimer seconds
+        remainingSeconds: gameRoom.startTimer, // Initialize with startTimer seconds
         status: RoomStatus.PENDING,
       });
 
@@ -128,14 +128,14 @@ export class AutoTimerService implements OnModuleInit {
         return;
       }
 
-      // Decrease startTime by 1 second
-      activeRoom.startTime -= 1;
+      // Decrease remainingSeconds by 1 second
+      activeRoom.remainingSeconds -= 1;
 
       // Update the database
       await this.activeRoomRepository.save(activeRoom);
 
       // Check if timer reached zero
-      if (activeRoom.startTime <= 0) {
+      if (activeRoom.remainingSeconds <= 0) {
         // Timer reached zero, check player count
         await this.checkPlayerCountAndProceed(activeRoom, gameRoom);
       }
@@ -195,7 +195,7 @@ export class AutoTimerService implements OnModuleInit {
    */
   private async resetTimer(activeRoom: ActiveRoomGlobal, gameRoom: GameRoom) {
     try {
-      activeRoom.startTime = gameRoom.startTimer; // Reset to original startTimer value
+      activeRoom.remainingSeconds = gameRoom.startTimer; // Reset to original startTimer value
       activeRoom.updatedAt = new Date();
       await this.activeRoomRepository.save(activeRoom);
 

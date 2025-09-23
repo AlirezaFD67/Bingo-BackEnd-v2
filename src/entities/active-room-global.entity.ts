@@ -19,7 +19,7 @@ export class ActiveRoomGlobal {
   gameRoomId: number;
 
   @Column({ type: 'integer', nullable: false })
-  startTime: number; // Remaining seconds
+  remainingSeconds: number;
 
   @Column({
     type: 'varchar',

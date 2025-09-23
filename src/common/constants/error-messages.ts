@@ -36,4 +36,7 @@ export const ERROR_MESSAGES = {
   ACTIVE_ROOM_NOT_FOUND: { error: 'Active room not found', status: 404 },
   ROOM_NOT_PENDING: { error: 'Room is not pending', status: 400 },
   INVALID_USER: { error: 'Invalid user', status: 400 },
+  SOCKET_CONNECTION_FAILED: { error: 'Socket connection failed', status: 500 },
+  SOCKET_ROOM_FETCH_FAILED: { error: 'Failed to fetch active room global', status: 500 },
+  INVALID_SOCKET_STATUS_FILTER: { error: 'Invalid status filter. Must be pending or started', status: 400 },
 };

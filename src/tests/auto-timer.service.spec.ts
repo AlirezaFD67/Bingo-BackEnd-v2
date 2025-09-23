@@ -181,11 +181,11 @@ describe('AutoTimerService', () => {
   });
 
   describe('processTimerTick', () => {
-    it('should decrease startTime by 1 and save to database', async () => {
+    it('should decrease remainingSeconds by 1 and save to database', async () => {
       const mockActiveRoom = {
         id: 1,
         gameRoomId: 1,
-        startTime: 30,
+        remainingSeconds: 30,
         status: RoomStatus.PENDING,
       };
 
@@ -229,7 +229,7 @@ describe('AutoTimerService', () => {
       mockGameRoomRepository.findOne.mockResolvedValue(mockGameRoom);
       mockActiveRoomRepository.save.mockResolvedValue({
         ...mockActiveRoom,
-        startTime: 0,
+        remainingSeconds: 0,
       });
 
       // Mock the private method
@@ -238,7 +238,7 @@ describe('AutoTimerService', () => {
       await (service as any).processTimerTick(mockActiveRoom);
 
       expect(checkPlayerCountSpy).toHaveBeenCalledWith(
-        { ...mockActiveRoom, startTime: 0 },
+        { ...mockActiveRoom, remainingSeconds: 0 },
         mockGameRoom
       );
     });
