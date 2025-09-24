@@ -39,4 +39,6 @@ export const ERROR_MESSAGES = {
   SOCKET_CONNECTION_FAILED: { error: 'Socket connection failed', status: 500 },
   SOCKET_ROOM_FETCH_FAILED: { error: 'Failed to fetch active room global', status: 500 },
   INVALID_SOCKET_STATUS_FILTER: { error: 'Invalid status filter. Must be pending or started', status: 400 },
+  SOCKET_DRAWN_NUMBERS_FETCH_FAILED: { error: 'Failed to fetch drawn numbers', status: 500 },
+  INVALID_ACTIVE_ROOM_ID: { error: 'activeRoomId is required', status: 400 },
 };

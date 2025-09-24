@@ -5,6 +5,9 @@ import { AutoTimerService } from '../modules/admin/auto-timer.service';
 import { GameRoom } from '../entities/game-room.entity';
 import { ActiveRoomGlobal } from '../entities/active-room-global.entity';
 import { Reservation } from '../entities/reservation.entity';
+import { Card } from '../entities/card.entity';
+import { UserReservedCard } from '../entities/user-reserved-card.entity';
+import { DrawnNumber } from '../entities/drawn-number.entity';
 import { RoomType } from '../enums/room-type.enum';
 import { RoomStatus } from '../enums/room-status.enum';
 
@@ -13,6 +16,9 @@ describe('AutoTimerService', () => {
   let gameRoomRepository: Repository<GameRoom>;
   let activeRoomRepository: Repository<ActiveRoomGlobal>;
   let reservationRepository: Repository<Reservation>;
+  let cardRepository: Repository<Card>;
+  let userReservedCardRepository: Repository<UserReservedCard>;
+  let drawnNumberRepository: Repository<DrawnNumber>;
 
   const mockGameRoomRepository = {
     find: jest.fn(),
@@ -27,6 +33,21 @@ describe('AutoTimerService', () => {
 
   const mockReservationRepository = {
     createQueryBuilder: jest.fn(),
+    find: jest.fn(),
+  };
+
+  const mockCardRepository = {
+    find: jest.fn(),
+  };
+
+  const mockUserReservedCardRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockDrawnNumberRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -45,6 +66,18 @@ describe('AutoTimerService', () => {
           provide: getRepositoryToken(Reservation),
           useValue: mockReservationRepository,
         },
+        {
+          provide: getRepositoryToken(Card),
+          useValue: mockCardRepository,
+        },
+        {
+          provide: getRepositoryToken(UserReservedCard),
+          useValue: mockUserReservedCardRepository,
+        },
+        {
+          provide: getRepositoryToken(DrawnNumber),
+          useValue: mockDrawnNumberRepository,
+        },
       ],
     }).compile();
 
@@ -52,6 +85,9 @@ describe('AutoTimerService', () => {
     gameRoomRepository = module.get<Repository<GameRoom>>(getRepositoryToken(GameRoom));
     activeRoomRepository = module.get<Repository<ActiveRoomGlobal>>(getRepositoryToken(ActiveRoomGlobal));
     reservationRepository = module.get<Repository<Reservation>>(getRepositoryToken(Reservation));
+    cardRepository = module.get<Repository<Card>>(getRepositoryToken(Card));
+    userReservedCardRepository = module.get<Repository<UserReservedCard>>(getRepositoryToken(UserReservedCard));
+    drawnNumberRepository = module.get<Repository<DrawnNumber>>(getRepositoryToken(DrawnNumber));
   });
 
   afterEach(() => {

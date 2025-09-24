@@ -6,3 +6,6 @@ export * from './app-settings.entity';
 export * from './otp-code.entity';
 export * from './wallet-transaction.entity';
 export * from './wheel-spin.entity';
+export * from './card.entity';
+export * from './user-reserved-card.entity';
+export * from './drawn-number.entity';

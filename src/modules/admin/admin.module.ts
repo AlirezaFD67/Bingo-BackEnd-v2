@@ -17,11 +17,14 @@ import { GameRoom } from '../../entities/game-room.entity';
 import { AppSettings } from '../../entities/app-settings.entity';
 import { WalletTransaction } from '../../entities/wallet-transaction.entity';
 import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
+import { Card } from '../../entities/card.entity';
+import { UserReservedCard } from '../../entities/user-reserved-card.entity';
+import { DrawnNumber } from '../../entities/drawn-number.entity';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Reservation, GameRoom, AppSettings, WalletTransaction, ActiveRoomGlobal]),
+    TypeOrmModule.forFeature([User, Reservation, GameRoom, AppSettings, WalletTransaction, ActiveRoomGlobal, Card, UserReservedCard, DrawnNumber]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here-change-in-production',
       signOptions: { expiresIn: '7d' },

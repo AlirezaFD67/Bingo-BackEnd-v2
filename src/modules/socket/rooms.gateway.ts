@@ -82,4 +82,34 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.emit('error', { message: 'Failed to fetch room info' });
     }
   }
+
+  @SubscribeMessage('numberDrawnRequest')
+  async handleNumberDrawnRequest(@MessageBody() data: { activeRoomId: number }) {
+    try {
+      this.logger.log(`Received numberDrawnRequest for activeRoomId: ${data?.activeRoomId}`);
+
+      if (!data?.activeRoomId) {
+        this.server.emit('error', { message: 'activeRoomId is required' });
+        return;
+      }
+
+      const { drawnNumbers, total } = await this.roomsService.getDrawnNumbers(data.activeRoomId);
+
+      const lastNumber = drawnNumbers.length > 0 ? drawnNumbers[drawnNumbers.length - 1] : null;
+
+      this.server.emit('numberDrawn', {
+        namespace: '/rooms',
+        event: 'numberDrawn',
+        data: {
+          activeRoomId: data.activeRoomId,
+          number: lastNumber,
+          totalDrawnNumbers: total,
+          drawnNumbers,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Error handling numberDrawnRequest:', error);
+      this.server.emit('error', { message: 'Failed to fetch drawn numbers' });
+    }
+  }
 }

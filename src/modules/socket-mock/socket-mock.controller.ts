@@ -170,4 +170,128 @@ export class SocketMockController {
     }
   }
 
+  @Get('number-drawn')
+  @ApiOperation({
+    summary: 'Get Drawn Numbers (Socket Mock)',
+    description: `
+    **Socket Namespace:** \`/rooms\`
+    
+    **Send Event:** \`numberDrawnRequest\`
+    - Data: \`{ activeRoomId: number }\`
+    
+    **Receive Event:** \`numberDrawn\`
+    - Data: All drawn numbers for the specified active room
+    
+    **Socket Connection:**
+    \`\`\`javascript
+    const socket = io('http://localhost:3006/rooms');
+    
+    socket.emit('numberDrawnRequest', { activeRoomId: 1 });
+    
+    socket.on('numberDrawn', (data) => {
+      console.log('Drawn Numbers:', data.data.drawnNumbers);
+      console.log('Total Drawn:', data.data.totalDrawnNumbers);
+      console.log('Last Number:', data.data.number);
+      // Response format:
+      // {
+      //   "namespace": "/rooms",
+      //   "event": "numberDrawn",
+      //   "data": {
+      //     "activeRoomId": 1,
+      //     "number": 42,
+      //     "totalDrawnNumbers": 17,
+      //     "drawnNumbers": [12, 45, 3, 78, 22, ...]
+      //   }
+      // }
+    });
+    \`\`\`
+    
+    **Response Format:**
+    \`\`\`json
+    {
+      "namespace": "/rooms",
+      "event": "numberDrawn",
+      "data": {
+        "activeRoomId": 1,
+        "number": 42,
+        "totalDrawnNumbers": 17,
+        "drawnNumbers": [12, 45, 3, 78, 22]
+      }
+    }
+    \`\`\`
+    `
+  })
+  @ApiQuery({
+    name: 'activeRoomId',
+    required: true,
+    type: 'number',
+    description: 'Active room ID to get drawn numbers for',
+    example: 1
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'All drawn numbers for the specified active room',
+    schema: {
+      type: 'object',
+      properties: {
+        namespace: { type: 'string', example: '/rooms' },
+        event: { type: 'string', example: 'numberDrawn' },
+        data: {
+          type: 'object',
+          properties: {
+            activeRoomId: { type: 'number', example: 1 },
+            number: { type: 'number', example: 42 },
+            totalDrawnNumbers: { type: 'number', example: 17 },
+            drawnNumbers: { 
+              type: 'array', 
+              items: { type: 'number' },
+              example: [12, 45, 3, 78, 22]
+            }
+          }
+        }
+      }
+    }
+  })
+  async getDrawnNumbers(
+    @Query('activeRoomId') activeRoomId: number
+  ): Promise<{
+    namespace: string;
+    event: string;
+    data: {
+      activeRoomId: number;
+      number: number | null;
+      totalDrawnNumbers: number;
+      drawnNumbers: number[];
+    };
+  }> {
+    try {
+      // Get real data from socket service
+      const { drawnNumbers, total } = await this.roomsService.getDrawnNumbers(activeRoomId);
+      const lastNumber = drawnNumbers.length > 0 ? drawnNumbers[drawnNumbers.length - 1] : null;
+
+      return {
+        namespace: '/rooms',
+        event: 'numberDrawn',
+        data: {
+          activeRoomId,
+          number: lastNumber,
+          totalDrawnNumbers: total,
+          drawnNumbers,
+        },
+      };
+    } catch (error) {
+      // Fallback to mock data if real service fails
+      return {
+        namespace: '/rooms',
+        event: 'numberDrawn',
+        data: {
+          activeRoomId,
+          number: 42,
+          totalDrawnNumbers: 5,
+          drawnNumbers: [12, 45, 3, 78, 22],
+        },
+      };
+    }
+  }
+
 }

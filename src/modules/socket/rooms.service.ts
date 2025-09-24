@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
 import { GameRoom } from '../../entities/game-room.entity';
 import { Reservation } from '../../entities/reservation.entity';
+import { DrawnNumber } from '../../entities/drawn-number.entity';
 import { RoomStatus } from '../../enums/room-status.enum';
 import { PendingRoomDto } from './dto/pending-rooms-response.dto';
 import { RoomInfoResponseDto } from './dto/room-info-response.dto';
@@ -19,6 +20,8 @@ export class RoomsService {
     private gameRoomRepository: Repository<GameRoom>,
     @InjectRepository(Reservation)
     private reservationRepository: Repository<Reservation>,
+    @InjectRepository(DrawnNumber)
+    private drawnNumberRepository: Repository<DrawnNumber>,
   ) {}
 
   async getPendingRooms(): Promise<PendingRoomDto[]> {
@@ -113,5 +116,16 @@ export class RoomsService {
       this.logger.error(`Error fetching room info for activeRoomId ${activeRoomId}:`, error);
       throw error;
     }
+  }
+
+  async getDrawnNumbers(activeRoomId: number): Promise<{ drawnNumbers: number[]; total: number }> {
+    // Fetch all drawn numbers for the room ordered by createdAt ASC
+    const rows = await this.drawnNumberRepository.find({
+      where: { activeRoomId },
+      order: { createdAt: 'ASC' },
+      select: ['number'],
+    });
+    const numbers = rows.map((r) => r.number);
+    return { drawnNumbers: numbers, total: numbers.length };
   }
 }

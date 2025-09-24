@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { GameRoom } from '../../entities/game-room.entity';
 import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
 import { Reservation } from '../../entities/reservation.entity';
+import { Card } from '../../entities/card.entity';
+import { UserReservedCard } from '../../entities/user-reserved-card.entity';
+import { DrawnNumber } from '../../entities/drawn-number.entity';
 import { RoomType } from '../../enums/room-type.enum';
 import { RoomStatus } from '../../enums/room-status.enum';
 
@@ -19,6 +22,12 @@ export class AutoTimerService implements OnModuleInit {
     private activeRoomRepository: Repository<ActiveRoomGlobal>,
     @InjectRepository(Reservation)
     private reservationRepository: Repository<Reservation>,
+    @InjectRepository(Card)
+    private cardRepository: Repository<Card>,
+    @InjectRepository(UserReservedCard)
+    private userReservedCardRepository: Repository<UserReservedCard>,
+    @InjectRepository(DrawnNumber)
+    private drawnNumberRepository: Repository<DrawnNumber>,
   ) {}
 
   async onModuleInit() {
@@ -185,6 +194,14 @@ export class AutoTimerService implements OnModuleInit {
 
       this.stopTimer(activeRoom.id);
       this.logger.log(`Game started for active room ${activeRoom.id}`);
+
+      // توزیع کارت‌ها به کاربران
+      await this.distributeCardsToUsers(activeRoom);
+
+      // شروع خواندن اعداد بعد از 3 ثانیه مکث
+      setTimeout(() => {
+        this.startNumberDrawing(activeRoom);
+      }, 3000);
     } catch (error) {
       this.logger.error(`Error starting game for active room ${activeRoom.id}:`, error);
     }
@@ -203,6 +220,99 @@ export class AutoTimerService implements OnModuleInit {
     } catch (error) {
       this.logger.error(`Error resetting timer for active room ${activeRoom.id}:`, error);
     }
+  }
+
+  /**
+   * توزیع کارت‌ها به کاربران بر اساس تعداد کارت‌های رزرو شده
+   */
+  private async distributeCardsToUsers(activeRoom: ActiveRoomGlobal) {
+    try {
+      // دریافت تمام رزروهای مربوط به این اتاق
+      const reservations = await this.reservationRepository.find({
+        where: { activeRoomId: activeRoom.id },
+      });
+
+      this.logger.log(`Distributing cards for ${reservations.length} reservations in active room ${activeRoom.id}`);
+
+      // دریافت تمام کارت‌های موجود
+      const allCards = await this.cardRepository.find();
+      
+      if (allCards.length === 0) {
+        this.logger.warn('No cards available for distribution');
+        return;
+      }
+
+      // مخلوط کردن کارت‌ها
+      const shuffledCards = [...allCards].sort(() => Math.random() - 0.5);
+
+      let cardIndex = 0;
+
+      // توزیع کارت‌ها به هر کاربر
+      for (const reservation of reservations) {
+        const cardsToDistribute = Math.min(reservation.cardCount, shuffledCards.length - cardIndex);
+        
+        for (let i = 0; i < cardsToDistribute; i++) {
+          const card = shuffledCards[cardIndex + i];
+          
+          // ایجاد رکورد user_reserved_cards
+          const userReservedCard = this.userReservedCardRepository.create({
+            userId: reservation.userId,
+            activeRoomId: activeRoom.id,
+            cardId: card.id,
+          });
+
+          await this.userReservedCardRepository.save(userReservedCard);
+        }
+
+        cardIndex += cardsToDistribute;
+        this.logger.log(`Distributed ${cardsToDistribute} cards to user ${reservation.userId}`);
+      }
+
+      this.logger.log(`Card distribution completed for active room ${activeRoom.id}`);
+    } catch (error) {
+      this.logger.error(`Error distributing cards for active room ${activeRoom.id}:`, error);
+    }
+  }
+
+  /**
+   * شروع خواندن اعداد (هر 3 ثانیه یک عدد)
+   */
+  private startNumberDrawing(activeRoom: ActiveRoomGlobal) {
+    this.logger.log(`Starting number drawing for active room ${activeRoom.id}`);
+    
+    // آرایه اعداد از 1 تا 90
+    const availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
+    const drawnNumbers: number[] = [];
+
+    const numberDrawingInterval = setInterval(async () => {
+      try {
+        // اگر تمام اعداد خوانده شده، توقف
+        if (drawnNumbers.length >= 90) {
+          clearInterval(numberDrawingInterval);
+          this.logger.log(`All numbers drawn for active room ${activeRoom.id}`);
+          return;
+        }
+
+        // انتخاب عدد تصادفی از اعداد باقی‌مانده
+        const remainingNumbers = availableNumbers.filter(num => !drawnNumbers.includes(num));
+        const randomIndex = Math.floor(Math.random() * remainingNumbers.length);
+        const drawnNumber = remainingNumbers[randomIndex];
+
+        // ذخیره عدد خوانده شده
+        const drawnNumberEntity = this.drawnNumberRepository.create({
+          activeRoomId: activeRoom.id,
+          number: drawnNumber,
+        });
+
+        await this.drawnNumberRepository.save(drawnNumberEntity);
+        drawnNumbers.push(drawnNumber);
+
+        this.logger.log(`Drew number ${drawnNumber} for active room ${activeRoom.id}`);
+      } catch (error) {
+        this.logger.error(`Error drawing number for active room ${activeRoom.id}:`, error);
+        clearInterval(numberDrawingInterval);
+      }
+    }, 3000); // هر 3 ثانیه
   }
 
   /**
