@@ -4,8 +4,12 @@ import { Repository } from 'typeorm';
 import { Reservation } from '../../entities/reservation.entity';
 import { GameRoom } from '../../entities/game-room.entity';
 import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
+import { UserReservedCard } from '../../entities/user-reserved-card.entity';
+import { Card } from '../../entities/card.entity';
+import { User } from '../../entities/user.entity';
 import { RoomStatus } from '../../enums/room-status.enum';
 import { ReserveRequestDto } from './dto/reserve-request.dto';
+import { RoomCardDto } from './dto/room-cards-response.dto';
 
 @Injectable()
 export class ReservationService {
@@ -16,6 +20,12 @@ export class ReservationService {
     private readonly gameRoomRepository: Repository<GameRoom>,
     @InjectRepository(ActiveRoomGlobal)
     private readonly activeRoomRepository: Repository<ActiveRoomGlobal>,
+    @InjectRepository(UserReservedCard)
+    private readonly userReservedCardRepository: Repository<UserReservedCard>,
+    @InjectRepository(Card)
+    private readonly cardRepository: Repository<Card>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async reserve(userId: number, dto: ReserveRequestDto) {
@@ -45,6 +55,24 @@ export class ReservationService {
 
     const saved = await this.reservationRepository.save(reservation);
     return { id: saved.id };
+  }
+
+  async getRoomCards(activeRoomId: number): Promise<RoomCardDto[]> {
+    const reservedCards = await this.userReservedCardRepository.find({
+      where: { activeRoomId },
+      relations: ['card', 'user'],
+    });
+
+    return reservedCards.map((reservedCard) => ({
+      cardId: reservedCard.card.id,
+      matrix: reservedCard.card.matrix,
+      owner: {
+        userId: reservedCard.user.id,
+        username: reservedCard.user.username || `user_${reservedCard.user.id}`,
+      },
+      activeRoomId: reservedCard.activeRoomId,
+      reservedAt: reservedCard.createdAt,
+    }));
   }
 }
 
