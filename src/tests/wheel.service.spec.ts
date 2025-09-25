@@ -137,7 +137,7 @@ describe('WheelService', () => {
       jest.spyOn(wheelSpinRepository, 'findOne').mockResolvedValue(null);
       jest.spyOn(wheelSpinRepository, 'create').mockReturnValue(mockWheelSpin as WheelSpin);
       jest.spyOn(wheelSpinRepository, 'save').mockResolvedValue(mockWheelSpin as WheelSpin);
-      jest.spyOn(userRepository, 'update').mockResolvedValue(undefined);
+      jest.spyOn(userRepository, 'update').mockResolvedValue({ affected: 1 } as any);
       jest.spyOn(walletTransactionRepository, 'create').mockReturnValue(mockTransaction as WalletTransaction);
       jest.spyOn(walletTransactionRepository, 'save').mockResolvedValue(mockTransaction as WalletTransaction);
 
@@ -238,7 +238,7 @@ describe('WheelService', () => {
         jest.spyOn(wheelSpinRepository, 'save').mockResolvedValue(mockWheelSpin as WheelSpin);
 
         if (amount > 0) {
-          jest.spyOn(userRepository, 'update').mockResolvedValue(undefined);
+          jest.spyOn(userRepository, 'update').mockResolvedValue({ affected: 1 } as any);
           jest.spyOn(walletTransactionRepository, 'create').mockReturnValue({
             id: 1,
             userId: 1,

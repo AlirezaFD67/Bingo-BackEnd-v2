@@ -26,8 +26,8 @@ export class CreateGlobalActiveRoomTable1700000000003
             isNullable: false,
           },
           {
-            name: 'startTime',
-            type: 'timestamp',
+            name: 'remainingSeconds',
+            type: 'integer',
             isNullable: false,
           },
           {

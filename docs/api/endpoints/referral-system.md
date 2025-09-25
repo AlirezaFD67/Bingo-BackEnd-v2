@@ -95,6 +95,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
   "bankCardNumber": null,
   "shebaNumber": null,
   "role": "USER",
+  "walletBalance": 500000,
   "createdAt": "2025-09-15T15:11:15.270Z",
   "createdAtPersian": "1404/06/26",
   "referralCode": "456789",

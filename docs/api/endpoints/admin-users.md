@@ -31,6 +31,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
     "referralCode": "12345",
     "referredBy": "67890",
     "role": "USER",
+    "walletBalance": 500000,
     "createdAt": "2024-06-20T12:34:56.789Z",
     "createdAtPersian": "1403/03/31"
   }
@@ -73,6 +74,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
   "referralCode": "12345",
   "referredBy": "67890",
   "role": "USER",
+  "walletBalance": 500000,
   "createdAt": "2024-06-20T12:34:56.789Z",
   "createdAtPersian": "1403/03/31"
 }
@@ -122,6 +124,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 | `referralCode` | string(6) | کد معرف | خیر |
 | `referredBy` | string(6) | کد معرف کننده | خیر |
 | `role` | enum | نقش کاربر (USER/ADMIN) | بله |
+| `walletBalance` | number | موجودی کیف پول (به ریال) | بله |
 | `createdAt` | Date | تاریخ ایجاد (ISO string) | بله |
 | `createdAtPersian` | string | تاریخ ایجاد (شمسی) | بله |
 
