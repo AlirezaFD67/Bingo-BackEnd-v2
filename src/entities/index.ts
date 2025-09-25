@@ -9,3 +9,4 @@ export * from './wheel-spin.entity';
 export * from './card.entity';
 export * from './user-reserved-card.entity';
 export * from './drawn-number.entity';
+export * from './active-room-winners.entity';

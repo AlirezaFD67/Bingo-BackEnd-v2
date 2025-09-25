@@ -294,4 +294,179 @@ export class SocketMockController {
     }
   }
 
+  @Get('win')
+  @ApiOperation({
+    summary: 'Get Winners (Socket Mock)',
+    description: `
+    **Socket Namespace:** \`/rooms\`
+    
+    **Send Event:** \`winRequest\`
+    - Data: \`{ activeRoomId: number }\`
+    
+    **Receive Event:** \`win\`
+    - Data: Winners information including line winners, full winners, and game status
+    
+    **Socket Connection:**
+    \`\`\`javascript
+    const socket = io('http://localhost:3006/rooms');
+    
+    socket.emit('winRequest', { activeRoomId: 1 });
+    
+    socket.on('win', (data) => {
+      console.log('Line Winners:', data.data.lineWinners);
+      console.log('Full Winners:', data.data.fullWinners);
+      console.log('Game Finished:', data.data.gameFinished);
+      // Response format:
+      // {
+      //   "namespace": "/rooms",
+      //   "event": "win",
+      //   "data": {
+      //     "activeRoomId": 1,
+      //     "lineWinners": [
+      //       {
+      //         "userId": 123,
+      //         "cardId": 456,
+      //         "amount": 50000
+      //       }
+      //     ],
+      //     "fullWinners": [
+      //       {
+      //         "userId": 789,
+      //         "cardId": 654,
+      //         "amount": 150000
+      //       }
+      //     ],
+      //     "gameFinished": true
+      //   }
+      // }
+    });
+    \`\`\`
+    
+    **Response Format:**
+    \`\`\`json
+    {
+      "namespace": "/rooms",
+      "event": "win",
+      "data": {
+        "activeRoomId": 1,
+        "lineWinners": [
+          {
+            "userId": 123,
+            "cardId": 456,
+            "amount": 50000
+          }
+        ],
+        "fullWinners": [
+          {
+            "userId": 789,
+            "cardId": 654,
+            "amount": 150000
+          }
+        ],
+        "gameFinished": true
+      }
+    }
+    \`\`\`
+    `
+  })
+  @ApiQuery({
+    name: 'activeRoomId',
+    required: true,
+    type: 'number',
+    description: 'Active room ID to get winners for',
+    example: 1
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Winners information including line winners, full winners, and game status',
+    schema: {
+      type: 'object',
+      properties: {
+        namespace: { type: 'string', example: '/rooms' },
+        event: { type: 'string', example: 'win' },
+        data: {
+          type: 'object',
+          properties: {
+            activeRoomId: { type: 'number', example: 1 },
+            lineWinners: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  userId: { type: 'number', example: 123 },
+                  cardId: { type: 'number', example: 456 },
+                  amount: { type: 'number', example: 50000 }
+                }
+              }
+            },
+            fullWinners: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  userId: { type: 'number', example: 789 },
+                  cardId: { type: 'number', example: 654 },
+                  amount: { type: 'number', example: 150000 }
+                }
+              }
+            },
+            gameFinished: { type: 'boolean', example: true }
+          }
+        }
+      }
+    }
+  })
+  async getWinners(
+    @Query('activeRoomId') activeRoomId: number
+  ): Promise<{
+    namespace: string;
+    event: string;
+    data: {
+      activeRoomId: number;
+      lineWinners: Array<{ userId: number; cardId: number; amount: number }>;
+      fullWinners: Array<{ userId: number; cardId: number; amount: number }>;
+      gameFinished: boolean;
+    };
+  }> {
+    try {
+      // Get real data from socket service
+      const winners = await this.roomsService.getWinners(activeRoomId);
+
+      return {
+        namespace: '/rooms',
+        event: 'win',
+        data: {
+          activeRoomId,
+          lineWinners: winners.lineWinners,
+          fullWinners: winners.fullWinners,
+          gameFinished: winners.gameFinished,
+        },
+      };
+    } catch (error) {
+      // Fallback to mock data if real service fails
+      return {
+        namespace: '/rooms',
+        event: 'win',
+        data: {
+          activeRoomId,
+          lineWinners: [
+            {
+              userId: 123,
+              cardId: 456,
+              amount: 50000,
+            },
+          ],
+          fullWinners: [
+            {
+              userId: 789,
+              cardId: 654,
+              amount: 150000,
+            },
+          ],
+          gameFinished: true,
+        },
+      };
+    }
+  }
+
 }

@@ -41,4 +41,7 @@ export const ERROR_MESSAGES = {
   INVALID_SOCKET_STATUS_FILTER: { error: 'Invalid status filter. Must be pending or started', status: 400 },
   SOCKET_DRAWN_NUMBERS_FETCH_FAILED: { error: 'Failed to fetch drawn numbers', status: 500 },
   INVALID_ACTIVE_ROOM_ID: { error: 'activeRoomId is required', status: 400 },
+  SOCKET_WINNERS_FETCH_FAILED: { error: 'Failed to fetch winners', status: 500 },
+  SOCKET_LINE_WINNER_CHECK_FAILED: { error: 'Failed to check line winners', status: 500 },
+  SOCKET_FULL_WINNER_CHECK_FAILED: { error: 'Failed to check full winners', status: 500 },
 };
