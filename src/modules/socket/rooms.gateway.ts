@@ -112,4 +112,34 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.emit('error', { message: 'Failed to fetch drawn numbers' });
     }
   }
+
+  @SubscribeMessage('winRequest')
+  async handleWinRequest(@MessageBody() data: { activeRoomId: number }) {
+    try {
+      this.logger.log(`Received winRequest for activeRoomId: ${data?.activeRoomId}`);
+
+      if (!data?.activeRoomId) {
+        this.server.emit('error', { message: 'activeRoomId is required' });
+        return;
+      }
+
+      const winners = await this.roomsService.getWinners(data.activeRoomId);
+
+      this.server.emit('win', {
+        namespace: '/rooms',
+        event: 'win',
+        data: {
+          activeRoomId: data.activeRoomId,
+          lineWinners: winners.lineWinners,
+          fullWinners: winners.fullWinners,
+          gameFinished: winners.gameFinished,
+        },
+      });
+
+      this.logger.log(`Sent winners for activeRoomId ${data.activeRoomId}: ${JSON.stringify(winners)}`);
+    } catch (error) {
+      this.logger.error('Error handling winRequest:', error);
+      this.server.emit('error', { message: 'Failed to fetch winners' });
+    }
+  }
 }
