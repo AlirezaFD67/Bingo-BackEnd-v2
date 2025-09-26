@@ -5,13 +5,23 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Reservation } from '../../entities/reservation.entity';
 import { GameRoom } from '../../entities/game-room.entity';
 import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
+import { UserReservedCard } from '../../entities/user-reserved-card.entity';
+import { Card } from '../../entities/card.entity';
+import { User } from '../../entities/user.entity';
 import { ReservationService } from './reservation.service';
 import { ReservationController } from './reservation.controller';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Reservation, GameRoom, ActiveRoomGlobal]),
+    TypeOrmModule.forFeature([
+      Reservation,
+      GameRoom,
+      ActiveRoomGlobal,
+      UserReservedCard,
+      Card,
+      User,
+    ]),
     AuthModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

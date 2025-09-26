@@ -8,6 +8,8 @@ import { ChargeWalletDto } from './dto/charge-wallet.dto';
 import { ChargeWalletResponseDto } from './dto/charge-wallet-response.dto';
 import { WithdrawWalletDto } from './dto/withdraw-wallet.dto';
 import { WithdrawWalletResponseDto } from './dto/withdraw-wallet-response.dto';
+import { GetWalletTransactionsDto } from './dto/get-wallet-transactions.dto';
+import { WalletTransactionResponseDto } from './dto/wallet-transaction-response.dto';
 
 @Injectable()
 export class WalletService {
@@ -124,5 +126,56 @@ export class WalletService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async getWalletTransactions(
+    userId: number,
+    filters: GetWalletTransactionsDto,
+  ): Promise<WalletTransactionResponseDto[]> {
+    // بررسی وجود کاربر
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('کاربر یافت نشد');
+    }
+
+    // ساخت query builder
+    const queryBuilder = this.walletTransactionRepository
+      .createQueryBuilder('transaction')
+      .where('transaction.userId = :userId', { userId })
+      .orderBy('transaction.createdAt', 'DESC');
+
+    // اعمال فیلتر نوع تراکنش
+    if (filters.type) {
+      queryBuilder.andWhere('transaction.type = :type', { type: filters.type });
+    }
+
+    // اعمال فیلتر وضعیت تراکنش
+    if (filters.status) {
+      queryBuilder.andWhere('transaction.status = :status', { status: filters.status });
+    }
+
+    // اعمال فیلتر روزهای گذشته
+    if (filters.days) {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - filters.days);
+      queryBuilder.andWhere('transaction.createdAt >= :startDate', { startDate });
+    }
+
+    // اجرای کوئری
+    const transactions = await queryBuilder.getMany();
+
+    // تبدیل به DTO
+    return transactions.map((transaction) => ({
+      id: transaction.id,
+      userId: transaction.userId,
+      amount: transaction.amount,
+      type: transaction.type,
+      status: transaction.status,
+      createdAt: transaction.createdAt,
+      description: transaction.description,
+    }));
   }
 }

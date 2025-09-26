@@ -1,7 +1,9 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
+  Query,
   HttpStatus,
   HttpCode,
   UseGuards,
@@ -18,6 +20,8 @@ import { ChargeWalletDto } from './dto/charge-wallet.dto';
 import { ChargeWalletResponseDto } from './dto/charge-wallet-response.dto';
 import { WithdrawWalletDto } from './dto/withdraw-wallet.dto';
 import { WithdrawWalletResponseDto } from './dto/withdraw-wallet-response.dto';
+import { GetWalletTransactionsDto } from './dto/get-wallet-transactions.dto';
+import { WalletTransactionResponseDto } from './dto/wallet-transaction-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('wallet')
@@ -87,5 +91,31 @@ export class WalletController {
   ): Promise<WithdrawWalletResponseDto> {
     const userId = req.user.id;
     return this.walletService.withdrawWallet(userId, withdrawDto);
+  }
+
+  @Get('transactions')
+  @ApiOperation({
+    summary: 'دریافت لیست تراکنش‌های کیف پول',
+    description: 'دریافت لیست تراکنش‌های کیف پول کاربر با قابلیت فیلتر بر اساس نوع، وضعیت و تعداد روزهای گذشته',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'لیست تراکنش‌های کیف پول کاربر',
+    type: [WalletTransactionResponseDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'کاربر احراز هویت نشده',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'کاربر یافت نشد',
+  })
+  async getWalletTransactions(
+    @Query() filters: GetWalletTransactionsDto,
+    @Request() req: any,
+  ): Promise<WalletTransactionResponseDto[]> {
+    const userId = req.user.id;
+    return this.walletService.getWalletTransactions(userId, filters);
   }
 }

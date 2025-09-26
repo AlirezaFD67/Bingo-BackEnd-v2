@@ -16,6 +16,19 @@ export const ENDPOINTS = {
     },
   },
 
+  // Reservation endpoints
+  RESERVATION: {
+    BASE: '/reservation',
+    RESERVE: '/reservation/reserve',
+    ROOM_CARDS: '/reservation/room-cards',
+  },
+
+  // Rooms endpoints
+  ROOMS: {
+    BASE: '/rooms',
+    GET_BY_ID: '/rooms/:id',
+  },
+
   // API Documentation
   DOCS: {
     SWAGGER: '/api/docs',
