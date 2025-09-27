@@ -1,14 +1,17 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { GameRoom } from '../../entities/game-room.entity';
 import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
 import { Reservation } from '../../entities/reservation.entity';
 import { Card } from '../../entities/card.entity';
 import { UserReservedCard } from '../../entities/user-reserved-card.entity';
 import { DrawnNumber } from '../../entities/drawn-number.entity';
+import { User } from '../../entities/user.entity';
+import { WalletTransaction } from '../../entities/wallet-transaction.entity';
 import { RoomType } from '../../enums/room-type.enum';
 import { RoomStatus } from '../../enums/room-status.enum';
+import { TransactionType, TransactionStatus } from '../../enums/transaction-type.enum';
 
 @Injectable()
 export class AutoTimerService implements OnModuleInit {
@@ -28,6 +31,11 @@ export class AutoTimerService implements OnModuleInit {
     private userReservedCardRepository: Repository<UserReservedCard>,
     @InjectRepository(DrawnNumber)
     private drawnNumberRepository: Repository<DrawnNumber>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @InjectRepository(WalletTransaction)
+    private walletTransactionRepository: Repository<WalletTransaction>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async onModuleInit() {
@@ -187,23 +195,88 @@ export class AutoTimerService implements OnModuleInit {
    * Start the game (change status to started)
    */
   private async startGame(activeRoom: ActiveRoomGlobal) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
       activeRoom.status = RoomStatus.STARTED;
       activeRoom.updatedAt = new Date();
-      await this.activeRoomRepository.save(activeRoom);
+      await queryRunner.manager.save(ActiveRoomGlobal, activeRoom);
 
       this.stopTimer(activeRoom.id);
       this.logger.log(`Game started for active room ${activeRoom.id}`);
 
+      // پردازش تراکنش‌های خرید کارت
+      await this.processCardPurchases(activeRoom, queryRunner);
+
       // توزیع کارت‌ها به کاربران
-      await this.distributeCardsToUsers(activeRoom);
+      await this.distributeCardsToUsers(activeRoom, queryRunner);
+
+      await queryRunner.commitTransaction();
 
       // شروع خواندن اعداد بعد از 3 ثانیه مکث
       setTimeout(() => {
         this.startNumberDrawing(activeRoom);
       }, 3000);
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       this.logger.error(`Error starting game for active room ${activeRoom.id}:`, error);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * پردازش تراکنش‌های خرید کارت برای کاربران
+   */
+  private async processCardPurchases(activeRoom: ActiveRoomGlobal, queryRunner: any) {
+    try {
+      // دریافت تمام رزروهای مربوط به این اتاق
+      const reservations = await queryRunner.manager.find(Reservation, {
+        where: { activeRoomId: activeRoom.id },
+      });
+
+      if (reservations.length === 0) {
+        this.logger.log(`No reservations found for active room ${activeRoom.id}`);
+        return;
+      }
+
+      // گروه‌بندی رزروها بر اساس کاربر
+      const userReservationsMap = new Map<number, number>();
+      
+      for (const reservation of reservations) {
+        const currentAmount = userReservationsMap.get(reservation.userId) || 0;
+        userReservationsMap.set(reservation.userId, currentAmount + Number(reservation.entryFee));
+      }
+
+      // پردازش تراکنش برای هر کاربر
+      for (const [userId, totalAmount] of userReservationsMap) {
+        // کسر مبلغ از walletBalance کاربر
+        await queryRunner.manager.update(
+          User,
+          { id: userId },
+          { walletBalance: () => `walletBalance - ${totalAmount}` },
+        );
+
+        // ثبت تراکنش خرید کارت
+        const transaction = queryRunner.manager.create(WalletTransaction, {
+          userId,
+          amount: totalAmount,
+          type: TransactionType.CARD_PURCHASE,
+          status: TransactionStatus.CONFIRMED,
+          description: `خرید کارت برای اتاق ${activeRoom.id}`,
+        });
+
+        await queryRunner.manager.save(WalletTransaction, transaction);
+
+        this.logger.log(`Processed card purchase for user ${userId}: ${totalAmount} toman`);
+      }
+
+      this.logger.log(`Card purchases processed for ${userReservationsMap.size} users in active room ${activeRoom.id}`);
+    } catch (error) {
+      this.logger.error(`Error processing card purchases for active room ${activeRoom.id}:`, error);
+      throw error;
     }
   }
 
@@ -225,17 +298,19 @@ export class AutoTimerService implements OnModuleInit {
   /**
    * توزیع کارت‌ها به کاربران بر اساس تعداد کارت‌های رزرو شده
    */
-  private async distributeCardsToUsers(activeRoom: ActiveRoomGlobal) {
+  private async distributeCardsToUsers(activeRoom: ActiveRoomGlobal, queryRunner?: any) {
     try {
       // دریافت تمام رزروهای مربوط به این اتاق
-      const reservations = await this.reservationRepository.find({
-        where: { activeRoomId: activeRoom.id },
-      });
+      const reservations = queryRunner 
+        ? await queryRunner.manager.find(Reservation, { where: { activeRoomId: activeRoom.id } })
+        : await this.reservationRepository.find({ where: { activeRoomId: activeRoom.id } });
 
       this.logger.log(`Distributing cards for ${reservations.length} reservations in active room ${activeRoom.id}`);
 
       // دریافت تمام کارت‌های موجود
-      const allCards = await this.cardRepository.find();
+      const allCards = queryRunner 
+        ? await queryRunner.manager.find(Card)
+        : await this.cardRepository.find();
       
       if (allCards.length === 0) {
         this.logger.warn('No cards available for distribution');
@@ -255,13 +330,23 @@ export class AutoTimerService implements OnModuleInit {
           const card = shuffledCards[cardIndex + i];
           
           // ایجاد رکورد user_reserved_cards
-          const userReservedCard = this.userReservedCardRepository.create({
-            userId: reservation.userId,
-            activeRoomId: activeRoom.id,
-            cardId: card.id,
-          });
+          const userReservedCard = queryRunner 
+            ? queryRunner.manager.create(UserReservedCard, {
+                userId: reservation.userId,
+                activeRoomId: activeRoom.id,
+                cardId: card.id,
+              })
+            : this.userReservedCardRepository.create({
+                userId: reservation.userId,
+                activeRoomId: activeRoom.id,
+                cardId: card.id,
+              });
 
-          await this.userReservedCardRepository.save(userReservedCard);
+          if (queryRunner) {
+            await queryRunner.manager.save(UserReservedCard, userReservedCard);
+          } else {
+            await this.userReservedCardRepository.save(userReservedCard);
+          }
         }
 
         cardIndex += cardsToDistribute;
@@ -271,6 +356,7 @@ export class AutoTimerService implements OnModuleInit {
       this.logger.log(`Card distribution completed for active room ${activeRoom.id}`);
     } catch (error) {
       this.logger.error(`Error distributing cards for active room ${activeRoom.id}:`, error);
+      throw error;
     }
   }
 
