@@ -9,7 +9,9 @@ import { Card } from '../../entities/card.entity';
 import { User } from '../../entities/user.entity';
 import { RoomStatus } from '../../enums/room-status.enum';
 import { ReserveRequestDto } from './dto/reserve-request.dto';
+import { ReserveResponseDto } from './dto/reserve-response.dto';
 import { RoomCardDto } from './dto/room-cards-response.dto';
+import { CardTransactionService } from '../wallet/card-transaction.service';
 
 @Injectable()
 export class ReservationService {
@@ -26,9 +28,10 @@ export class ReservationService {
     private readonly cardRepository: Repository<Card>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly cardTransactionService: CardTransactionService,
   ) {}
 
-  async reserve(userId: number, dto: ReserveRequestDto) {
+  async reserve(userId: number, dto: ReserveRequestDto): Promise<ReserveResponseDto> {
     if (!userId) {
       throw new BadRequestException('Invalid user');
     }
@@ -54,7 +57,21 @@ export class ReservationService {
     });
 
     const saved = await this.reservationRepository.save(reservation);
-    return { id: saved.id };
+
+    // محاسبه availableWalletBalance بعد از رزرو
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const reservedCardsAmount = await this.cardTransactionService.calculateUserReservedCardsAmount(userId);
+    const availableWalletBalance = Number(user.walletBalance) - reservedCardsAmount;
+
+    return {
+      id: saved.id,
+      walletBalance: Number(user.walletBalance),
+      availableWalletBalance,
+    };
   }
 
   async getRoomCards(activeRoomId: number): Promise<RoomCardDto[]> {

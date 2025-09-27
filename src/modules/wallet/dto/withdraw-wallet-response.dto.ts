@@ -15,7 +15,7 @@ export class WithdrawWalletResponseDto {
   userId: number;
 
   @ApiProperty({
-    description: 'مبلغ برداشت (به ریال) - منفی نشان‌دهنده برداشت است',
+    description: 'مبلغ برداشت (به تومان) - منفی نشان‌دهنده برداشت است',
     example: -50000,
   })
   amount: number;

@@ -15,7 +15,7 @@ export class WalletTransactionResponseDto {
   userId: number;
 
   @ApiProperty({
-    description: 'مبلغ تراکنش (به ریال)',
+    description: 'مبلغ تراکنش (به تومان)',
     example: 100000,
   })
   amount: number;

@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class WithdrawWalletDto {
   @ApiProperty({
-    description: 'مبلغ برداشت (به ریال)',
+    description: 'مبلغ برداشت (به تومان)',
     example: 50000,
     minimum: 1,
   })

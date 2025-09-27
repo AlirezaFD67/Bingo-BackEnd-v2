@@ -124,7 +124,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 | `referralCode` | string(6) | کد معرف | خیر |
 | `referredBy` | string(6) | کد معرف کننده | خیر |
 | `role` | enum | نقش کاربر (USER/ADMIN) | بله |
-| `walletBalance` | number | موجودی کیف پول (به ریال) | بله |
+| `walletBalance` | number | موجودی کیف پول (به تومان) | بله |
 | `createdAt` | Date | تاریخ ایجاد (ISO string) | بله |
 | `createdAtPersian` | string | تاریخ ایجاد (شمسی) | بله |
 
