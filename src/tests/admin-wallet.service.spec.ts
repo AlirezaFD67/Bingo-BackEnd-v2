@@ -47,9 +47,9 @@ describe('WalletService', () => {
           id: 1,
           userId: 1,
           amount: 10000,
-          type: TransactionType.DEPOSIT,
+          type: TransactionType.CHARGE,
           status: TransactionStatus.CONFIRMED,
-          description: 'Test deposit',
+          description: 'Test charge',
           createdAt: new Date(),
         },
       ];
@@ -72,9 +72,9 @@ describe('WalletService', () => {
           id: 1,
           userId: 1,
           amount: 10000,
-          type: TransactionType.DEPOSIT,
+          type: TransactionType.CHARGE,
           status: TransactionStatus.CONFIRMED,
-          description: 'Test deposit',
+          description: 'Test charge',
           createdAt: new Date(),
         },
       ];
@@ -82,12 +82,12 @@ describe('WalletService', () => {
       const queryBuilder = mockWalletTransactionRepository.createQueryBuilder();
       queryBuilder.getMany.mockResolvedValue(mockTransactions);
 
-      const query: GetWalletTransactionsQueryDto = { type: TransactionType.DEPOSIT };
+      const query: GetWalletTransactionsQueryDto = { type: TransactionType.CHARGE };
       const result = await service.getTransactions(query);
 
       expect(result).toEqual(mockTransactions);
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('transaction.type = :type', { 
-        type: TransactionType.DEPOSIT 
+        type: TransactionType.CHARGE 
       });
     });
 

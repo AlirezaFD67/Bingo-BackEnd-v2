@@ -10,6 +10,7 @@ import { Reservation } from '../../entities/reservation.entity';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { AdminUserResponseDto } from './dto/admin-user-response.dto';
+import { CardTransactionService } from '../wallet/card-transaction.service';
 
 @Injectable()
 export class UsersService {
@@ -18,6 +19,7 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
+    private readonly cardTransactionService: CardTransactionService,
   ) {}
 
   async getProfile(userId: number): Promise<UserProfileResponseDto> {
@@ -34,6 +36,12 @@ export class UsersService {
       select: ['activeRoomId', 'cardCount', 'entryFee', 'status'],
     });
 
+    // محاسبه مبلغ کارت‌های رزرو شده در روم‌های pending
+    const reservedCardsAmount = await this.cardTransactionService.calculateUserReservedCardsAmount(userId);
+    
+    // محاسبه walletBalance جدید (کسر مبلغ کارت‌های رزرو شده)
+    const adjustedWalletBalance = Number(user.walletBalance) - reservedCardsAmount;
+
     const createdAtPersian = this.convertToPersianDate(user.createdAt);
 
     return {
@@ -45,7 +53,7 @@ export class UsersService {
       bankCardNumber: user.bankCardNumber,
       shebaNumber: user.shebaNumber,
       role: user.role,
-      walletBalance: Number(user.walletBalance),
+      walletBalance: adjustedWalletBalance,
       createdAt: user.createdAt,
       createdAtPersian,
       referralCode: user.referralCode,
@@ -194,6 +202,7 @@ export class UsersService {
     // Return the updated user data
     return this.getUserById(id);
   }
+
 
   private convertToPersianDate(date: Date): string {
     // Convert Gregorian date to Persian (Jalali) calendar

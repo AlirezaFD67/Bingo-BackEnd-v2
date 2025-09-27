@@ -6,10 +6,12 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { User } from '../../entities/user.entity';
 import { Reservation } from '../../entities/reservation.entity';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Reservation]),
+    WalletModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

@@ -20,6 +20,7 @@ import { ActiveRoomGlobal } from '../../entities/active-room-global.entity';
 import { Card } from '../../entities/card.entity';
 import { UserReservedCard } from '../../entities/user-reserved-card.entity';
 import { DrawnNumber } from '../../entities/drawn-number.entity';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { DrawnNumber } from '../../entities/drawn-number.entity';
       secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here-change-in-production',
       signOptions: { expiresIn: '7d' },
     }),
+    WalletModule,
   ],
   controllers: [AdminController, GameRoomsController, SettingsController, WalletController],
   providers: [UsersService, GameRoomsService, SettingsService, WalletService, AutoTimerService],

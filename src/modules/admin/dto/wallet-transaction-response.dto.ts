@@ -14,7 +14,7 @@ export class WalletTransactionResponseDto {
   @ApiProperty({ 
     description: 'Transaction type', 
     enum: TransactionType,
-    example: TransactionType.DEPOSIT 
+    example: TransactionType.CHARGE 
   })
   type: TransactionType;
 
