@@ -26,7 +26,7 @@ export class ReservationInfoDto {
   cardCount: number;
 
   @ApiProperty({
-    description: 'هزینه ورودی (به ریال)',
+    description: 'هزینه ورودی (به تومان)',
     example: 100000,
   })
   @Expose()
@@ -106,7 +106,7 @@ export class UserProfileResponseDto {
   role: string;
 
   @ApiProperty({
-    description: 'موجودی کیف پول واقعی (به ریال)',
+    description: 'موجودی کیف پول واقعی (به تومان)',
     example: 500000,
   })
   @Expose()

@@ -15,7 +15,7 @@ export class ChargeWalletResponseDto {
   userId: number;
 
   @ApiProperty({
-    description: 'مبلغ شارژ (به ریال)',
+    description: 'مبلغ شارژ (به تومان)',
     example: 100000,
   })
   amount: number;

@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ChargeWalletDto {
   @ApiProperty({
-    description: 'مبلغ شارژ کیف پول (به ریال)',
+    description: 'مبلغ شارژ کیف پول (به تومان)',
     example: 100000,
     minimum: 1,
   })

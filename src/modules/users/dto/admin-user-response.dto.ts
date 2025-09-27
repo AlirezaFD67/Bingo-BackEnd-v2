@@ -90,7 +90,7 @@ export class AdminUserResponseDto {
   role: string;
 
   @ApiProperty({
-    description: 'موجودی کیف پول (به ریال)',
+    description: 'موجودی کیف پول (به تومان)',
     example: 500000,
   })
   @Expose()

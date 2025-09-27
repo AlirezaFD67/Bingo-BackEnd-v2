@@ -11,6 +11,7 @@ import { User } from '../../entities/user.entity';
 import { ReservationService } from './reservation.service';
 import { ReservationController } from './reservation.controller';
 import { AuthModule } from '../auth/auth.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AuthModule } from '../auth/auth.module';
       User,
     ]),
     AuthModule,
+    WalletModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
