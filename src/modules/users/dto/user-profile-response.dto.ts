@@ -106,11 +106,18 @@ export class UserProfileResponseDto {
   role: string;
 
   @ApiProperty({
-    description: 'موجودی کیف پول (به ریال)',
+    description: 'موجودی کیف پول واقعی (به ریال)',
     example: 500000,
   })
   @Expose()
   walletBalance: number;
+
+  @ApiProperty({
+    description: 'موجودی قابل استفاده (کم شده از کارت‌های رزرو شده در روم‌های pending)',
+    example: 450000,
+  })
+  @Expose()
+  availableWalletBalance: number;
 
   @ApiProperty({
     description: 'تاریخ ایجاد حساب (میلادی)',

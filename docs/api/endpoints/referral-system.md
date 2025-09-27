@@ -95,7 +95,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
   "bankCardNumber": null,
   "shebaNumber": null,
   "role": "USER",
-  "walletBalance": 450000,
+  "walletBalance": 500000,
+  "availableWalletBalance": 450000,
   "createdAt": "2025-09-15T15:11:15.270Z",
   "createdAtPersian": "1404/06/26",
   "referralCode": "456789",
@@ -106,7 +107,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 }
 ```
 
-**نکته مهم**: `walletBalance` برگشتی شامل کسر مبلغ کارت‌های رزرو شده در روم‌های pending است. اگر کاربر کارت‌هایی در روم‌های pending رزرو کرده باشد، مبلغ آن‌ها از walletBalance واقعی کم شده و مبلغ جدید برگردانده می‌شود.
+**نکته مهم**: 
+- `walletBalance`: موجودی واقعی کاربر در دیتابیس
+- `availableWalletBalance`: موجودی قابل استفاده که مبلغ کارت‌های رزرو شده در روم‌های pending از آن کم شده است
 
 ## قوانین کسب و کار
 
