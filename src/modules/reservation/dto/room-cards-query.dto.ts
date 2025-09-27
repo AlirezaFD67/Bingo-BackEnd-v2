@@ -1,6 +1,6 @@
-import { IsNotEmpty, IsNumberString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class RoomCardsQueryDto {
   @ApiProperty({
@@ -8,7 +8,9 @@ export class RoomCardsQueryDto {
     example: 1,
   })
   @IsNotEmpty()
-  @IsNumberString()
-  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  @Transform(({ value }) => parseInt(value, 10))
   activeRoomId: number;
 }
