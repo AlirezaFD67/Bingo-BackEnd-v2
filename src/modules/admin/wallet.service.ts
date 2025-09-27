@@ -12,6 +12,7 @@ import {
   TransactionStatus,
 } from '../../enums/transaction-type.enum';
 import { GetWalletTransactionsQueryDto } from './dto/get-wallet-transactions-query.dto';
+import { AdminWalletTransactionResponseDto } from './dto/wallet-transaction-response.dto';
 import { WithdrawWalletResponseDto } from '../wallet/dto/withdraw-wallet-response.dto';
 
 @Injectable()
@@ -26,7 +27,7 @@ export class WalletService {
 
   async getTransactions(
     query: GetWalletTransactionsQueryDto,
-  ): Promise<WalletTransaction[]> {
+  ): Promise<AdminWalletTransactionResponseDto[]> {
     const queryBuilder = this.walletTransactionRepository
       .createQueryBuilder('transaction')
       .leftJoinAndSelect('transaction.user', 'user')
@@ -36,7 +37,18 @@ export class WalletService {
       queryBuilder.andWhere('transaction.type = :type', { type: query.type });
     }
 
-    return queryBuilder.getMany();
+    const transactions = await queryBuilder.getMany();
+    
+    // تبدیل به DTO
+    return transactions.map((transaction) => ({
+      id: transaction.id,
+      userId: transaction.userId,
+      amount: transaction.amount,
+      type: transaction.type,
+      status: transaction.status,
+      description: transaction.description,
+      createdAt: transaction.createdAt,
+    }));
   }
 
   async confirmWithdraw(txId: number): Promise<WithdrawWalletResponseDto> {

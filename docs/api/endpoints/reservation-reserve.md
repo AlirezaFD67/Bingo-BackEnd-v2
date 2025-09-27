@@ -27,9 +27,18 @@
 ### Success (200)
 ```json
 {
-  "id": 123
+  "id": 123,
+  "walletBalance": 415000,
+  "availableWalletBalance": 385000
 }
 ```
+
+#### Response Fields
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | number | شناسه رزرو ایجاد شده |
+| `walletBalance` | number | موجودی واقعی کیف پول کاربر |
+| `availableWalletBalance` | number | موجودی قابل استفاده (پس از کسر کارت‌های رزرو شده در روم‌های pending) |
 
 ### Error Responses
 
@@ -70,9 +79,12 @@
 3. بررسی وضعیت روم (باید `pending` باشد)
 4. دریافت `entryFee` از `game_rooms` مرتبط
 5. ایجاد رکورد جدید در جدول `reservations`
-6. امکان عضویت همزمان در چند روم
+6. محاسبه `availableWalletBalance` با کسر مبلغ کارت‌های رزرو شده در روم‌های pending
+7. بازگشت `walletBalance` و `availableWalletBalance` در پاسخ
 
 ## Notes
 - کاربر می‌تواند همزمان در چند روم عضو باشد
 - فقط روم‌های با وضعیت `pending` قابل رزرو هستند
+- `availableWalletBalance` = `walletBalance` - (مجموع `cardCount × entryFee` برای تمام رزروهای pending)
+- پس از رزرو، کاربر بلافاصله موجودی قابل استفاده جدید را می‌بیند
 

@@ -187,6 +187,13 @@ export class WalletService {
       });
     }
 
+    // اعمال pagination
+    const page = filters.page || 1;
+    const limit = filters.limit || 20;
+    const skip = (page - 1) * limit;
+
+    queryBuilder.skip(skip).take(limit);
+
     // اجرای کوئری
     const transactions = await queryBuilder.getMany();
 

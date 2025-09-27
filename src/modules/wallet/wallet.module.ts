@@ -7,10 +7,11 @@ import { CardTransactionService } from './card-transaction.service';
 import { User } from '../../entities/user.entity';
 import { WalletTransaction } from '../../entities/wallet-transaction.entity';
 import { UserReservedCard } from '../../entities/user-reserved-card.entity';
+import { Reservation } from '../../entities/reservation.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, WalletTransaction, UserReservedCard]),
+    TypeOrmModule.forFeature([User, WalletTransaction, UserReservedCard, Reservation]),
     JwtModule.register({}),
   ],
   controllers: [WalletController],

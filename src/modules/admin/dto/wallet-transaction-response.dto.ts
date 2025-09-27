@@ -4,7 +4,7 @@ import {
   TransactionStatus,
 } from '../../../enums/transaction-type.enum';
 
-export class WalletTransactionResponseDto {
+export class AdminWalletTransactionResponseDto {
   @ApiProperty({ description: 'Transaction ID', example: 1 })
   id: number;
 

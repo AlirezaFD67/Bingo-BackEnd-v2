@@ -38,4 +38,31 @@ export class GetWalletTransactionsDto {
   @Min(1)
   @Type(() => Number)
   days?: number;
+
+  @ApiProperty({
+    description: 'شماره صفحه برای pagination',
+    example: 1,
+    required: false,
+    minimum: 1,
+    default: 1,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  page?: number;
+
+  @ApiProperty({
+    description: 'تعداد آیتم در هر صفحه',
+    example: 20,
+    required: false,
+    minimum: 1,
+    maximum: 100,
+    default: 20,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  limit?: number;
 }

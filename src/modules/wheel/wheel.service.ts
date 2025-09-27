@@ -110,11 +110,11 @@ export class WheelService {
 
     await this.wheelSpinRepository.save(wheelSpin);
 
-    let newBalance = user.walletBalance;
+    let newBalance = Number(user.walletBalance);
 
     // اگر جایزه بیشتر از صفر است، به کیف پول اضافه کن
     if (dto.value > 0) {
-      newBalance = user.walletBalance + dto.value;
+      newBalance = Number(user.walletBalance) + dto.value;
 
       // بروزرسانی موجودی کیف پول
       await this.userRepository.update(userId, {

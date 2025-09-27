@@ -3,15 +3,18 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WalletService } from '../modules/admin/wallet.service';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
+import { User } from '../entities/user.entity';
 import {
   TransactionType,
   TransactionStatus,
 } from '../enums/transaction-type.enum';
 import { GetWalletTransactionsQueryDto } from '../modules/admin/dto/get-wallet-transactions-query.dto';
+import { AdminWalletTransactionResponseDto } from '../modules/admin/dto/wallet-transaction-response.dto';
 
-describe('WalletService', () => {
+describe('AdminWalletService', () => {
   let service: WalletService;
   let walletTransactionRepository: Repository<WalletTransaction>;
+  let userRepository: Repository<User>;
 
   const mockWalletTransactionRepository = {
     createQueryBuilder: jest.fn(() => ({
@@ -22,6 +25,10 @@ describe('WalletService', () => {
     })),
   };
 
+  const mockUserRepository = {
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -30,12 +37,19 @@ describe('WalletService', () => {
           provide: getRepositoryToken(WalletTransaction),
           useValue: mockWalletTransactionRepository,
         },
+        {
+          provide: getRepositoryToken(User),
+          useValue: mockUserRepository,
+        },
       ],
     }).compile();
 
     service = module.get<WalletService>(WalletService);
     walletTransactionRepository = module.get<Repository<WalletTransaction>>(
       getRepositoryToken(WalletTransaction),
+    );
+    userRepository = module.get<Repository<User>>(
+      getRepositoryToken(User),
     );
   });
 
@@ -57,13 +71,25 @@ describe('WalletService', () => {
         },
       ];
 
+      const expectedResult: AdminWalletTransactionResponseDto[] = [
+        {
+          id: 1,
+          userId: 1,
+          amount: 10000,
+          type: TransactionType.CHARGE,
+          status: TransactionStatus.CONFIRMED,
+          description: 'Test charge',
+          createdAt: mockTransactions[0].createdAt,
+        },
+      ];
+
       const queryBuilder = mockWalletTransactionRepository.createQueryBuilder();
       queryBuilder.getMany.mockResolvedValue(mockTransactions);
 
       const query: GetWalletTransactionsQueryDto = {};
       const result = await service.getTransactions(query);
 
-      expect(result).toEqual(mockTransactions);
+      expect(result).toEqual(expectedResult);
       expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
         'transaction.user',
         'user',
@@ -88,6 +114,18 @@ describe('WalletService', () => {
         },
       ];
 
+      const expectedResult: AdminWalletTransactionResponseDto[] = [
+        {
+          id: 1,
+          userId: 1,
+          amount: 10000,
+          type: TransactionType.CHARGE,
+          status: TransactionStatus.CONFIRMED,
+          description: 'Test charge',
+          createdAt: mockTransactions[0].createdAt,
+        },
+      ];
+
       const queryBuilder = mockWalletTransactionRepository.createQueryBuilder();
       queryBuilder.getMany.mockResolvedValue(mockTransactions);
 
@@ -96,7 +134,7 @@ describe('WalletService', () => {
       };
       const result = await service.getTransactions(query);
 
-      expect(result).toEqual(mockTransactions);
+      expect(result).toEqual(expectedResult);
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'transaction.type = :type',
         {

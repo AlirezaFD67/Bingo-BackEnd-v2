@@ -107,9 +107,10 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 }
 ```
 
-**نکته مهم**: 
-- `walletBalance`: موجودی واقعی کاربر در دیتابیس
+**نکات مهم**: 
+- `walletBalance`: موجودی واقعی کاربر در دیتابیس (بدون کسر)
 - `availableWalletBalance`: موجودی قابل استفاده که مبلغ کارت‌های رزرو شده در روم‌های pending از آن کم شده است
+- `reservations`: لیست رزروهای کاربر شامل `activeRoomId`, `cardCount`, `entryFee`, و `status`
 
 ## قوانین کسب و کار
 

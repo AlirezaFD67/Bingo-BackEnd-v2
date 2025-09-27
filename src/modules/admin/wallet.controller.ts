@@ -22,7 +22,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { GetWalletTransactionsQueryDto } from './dto/get-wallet-transactions-query.dto';
-import { WalletTransactionResponseDto } from './dto/wallet-transaction-response.dto';
+import { AdminWalletTransactionResponseDto } from './dto/wallet-transaction-response.dto';
 import { WithdrawWalletResponseDto } from '../wallet/dto/withdraw-wallet-response.dto';
 
 @ApiTags('Admin-Wallet')
@@ -42,7 +42,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Wallet transactions retrieved successfully',
-    type: [WalletTransactionResponseDto],
+    type: [AdminWalletTransactionResponseDto],
   })
   @ApiResponse({
     status: 401,
@@ -54,7 +54,7 @@ export class WalletController {
   })
   async getTransactions(
     @Query() query: GetWalletTransactionsQueryDto,
-  ): Promise<WalletTransactionResponseDto[]> {
+  ): Promise<AdminWalletTransactionResponseDto[]> {
     return this.walletService.getTransactions(query);
   }
 
