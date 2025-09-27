@@ -77,7 +77,7 @@ POST /api/auth/verify-otp
 GET /api/users/me
 ```
 
-**هدف**: دریافت اطلاعات پروفایل کاربر شامل کد رفرال
+**هدف**: دریافت اطلاعات پروفایل کاربر شامل کد رفرال و walletBalance محاسبه‌شده
 
 **هدر Authorization**:
 ```
@@ -95,7 +95,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
   "bankCardNumber": null,
   "shebaNumber": null,
   "role": "USER",
-  "walletBalance": 500000,
+  "walletBalance": 450000,
   "createdAt": "2025-09-15T15:11:15.270Z",
   "createdAtPersian": "1404/06/26",
   "referralCode": "456789",
@@ -105,6 +105,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
   "duration": 3
 }
 ```
+
+**نکته مهم**: `walletBalance` برگشتی شامل کسر مبلغ کارت‌های رزرو شده در روم‌های pending است. اگر کاربر کارت‌هایی در روم‌های pending رزرو کرده باشد، مبلغ آن‌ها از walletBalance واقعی کم شده و مبلغ جدید برگردانده می‌شود.
 
 ## قوانین کسب و کار
 

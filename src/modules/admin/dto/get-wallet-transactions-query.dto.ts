@@ -6,7 +6,7 @@ export class GetWalletTransactionsQueryDto {
   @ApiPropertyOptional({
     description: 'Filter transactions by type',
     enum: TransactionType,
-    example: TransactionType.DEPOSIT,
+    example: TransactionType.CHARGE,
   })
   @IsOptional()
   @IsEnum(TransactionType)
