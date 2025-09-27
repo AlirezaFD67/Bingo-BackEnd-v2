@@ -39,8 +39,8 @@ export class UsersService {
     // محاسبه مبلغ کارت‌های رزرو شده در روم‌های pending
     const reservedCardsAmount = await this.cardTransactionService.calculateUserReservedCardsAmount(userId);
     
-    // محاسبه walletBalance جدید (کسر مبلغ کارت‌های رزرو شده)
-    const adjustedWalletBalance = Number(user.walletBalance) - reservedCardsAmount;
+    // محاسبه موجودی قابل استفاده (کسر مبلغ کارت‌های رزرو شده)
+    const availableWalletBalance = Number(user.walletBalance) - reservedCardsAmount;
 
     const createdAtPersian = this.convertToPersianDate(user.createdAt);
 
@@ -53,7 +53,8 @@ export class UsersService {
       bankCardNumber: user.bankCardNumber,
       shebaNumber: user.shebaNumber,
       role: user.role,
-      walletBalance: adjustedWalletBalance,
+      walletBalance: Number(user.walletBalance), // موجودی واقعی در دیتابیس
+      availableWalletBalance, // موجودی قابل استفاده (کم شده از کارت‌های pending)
       createdAt: user.createdAt,
       createdAtPersian,
       referralCode: user.referralCode,

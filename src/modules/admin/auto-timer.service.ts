@@ -228,21 +228,26 @@ export class AutoTimerService implements OnModuleInit {
   }
 
   /**
-   * پردازش تراکنش‌های خرید کارت برای کاربران
+   * پردازش تراکنش‌های خرید کارت برای کاربران (فقط برای روم‌های started)
    */
   private async processCardPurchases(activeRoom: ActiveRoomGlobal, queryRunner: any) {
     try {
-      // دریافت تمام رزروهای مربوط به این اتاق
+      // دریافت تمام رزروهای مربوط به این اتاق که status آن‌ها PENDING است
+      // چون فقط کارت‌های pending باید خریداری شوند
       const reservations = await queryRunner.manager.find(Reservation, {
-        where: { activeRoomId: activeRoom.id },
+        where: { 
+          activeRoomId: activeRoom.id,
+          status: 'pending' // فقط رزروهای pending
+        },
       });
 
       if (reservations.length === 0) {
-        this.logger.log(`No reservations found for active room ${activeRoom.id}`);
+        this.logger.log(`No pending reservations found for active room ${activeRoom.id}`);
         return;
       }
 
       // گروه‌بندی رزروها بر اساس کاربر
+      // هر کاربر یک تراکنش برای این activeRoomId خواهد داشت
       const userReservationsMap = new Map<number, number>();
       
       for (const reservation of reservations) {
@@ -250,7 +255,7 @@ export class AutoTimerService implements OnModuleInit {
         userReservationsMap.set(reservation.userId, currentAmount + Number(reservation.entryFee));
       }
 
-      // پردازش تراکنش برای هر کاربر
+      // پردازش تراکنش برای هر کاربر (یک تراکنش برای هر کاربر در این activeRoomId)
       for (const [userId, totalAmount] of userReservationsMap) {
         // کسر مبلغ از walletBalance کاربر
         await queryRunner.manager.update(
@@ -259,18 +264,18 @@ export class AutoTimerService implements OnModuleInit {
           { walletBalance: () => `walletBalance - ${totalAmount}` },
         );
 
-        // ثبت تراکنش خرید کارت
+        // ثبت یک تراکنش خرید کارت برای این کاربر در این activeRoomId
         const transaction = queryRunner.manager.create(WalletTransaction, {
           userId,
           amount: totalAmount,
           type: TransactionType.CARD_PURCHASE,
           status: TransactionStatus.CONFIRMED,
-          description: `خرید کارت برای اتاق ${activeRoom.id}`,
+          description: `خرید کارت برای اتاق ${activeRoom.id} (مجموع کارت‌های رزرو شده)`,
         });
 
         await queryRunner.manager.save(WalletTransaction, transaction);
 
-        this.logger.log(`Processed card purchase for user ${userId}: ${totalAmount} toman`);
+        this.logger.log(`Processed card purchase for user ${userId} in active room ${activeRoom.id}: ${totalAmount} toman`);
       }
 
       this.logger.log(`Card purchases processed for ${userReservationsMap.size} users in active room ${activeRoom.id}`);
