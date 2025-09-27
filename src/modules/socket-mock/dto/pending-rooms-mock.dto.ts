@@ -1,53 +1,53 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PendingRoomMockDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Active room ID',
-    example: 1
+    example: 1,
   })
   activeRoomId: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Game room ID',
-    example: 1
+    example: 1,
   })
   gameRoomId: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Remaining seconds until timer expires',
-    example: 80
+    example: 80,
   })
   remainingSeconds: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Current player count',
-    example: 3
+    example: 3,
   })
   playerCount: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Entry fee for the room',
-    example: 100000
+    example: 100000,
   })
   entryFee: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Room status',
     enum: ['pending', 'started'],
-    example: 'pending'
+    example: 'pending',
   })
   status: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Minimum players required to start',
-    example: 3
+    example: 3,
   })
   minPlayers: number;
 }
 
 export class PendingRoomsMockResponseDto {
-  @ApiProperty({ 
-    type: [PendingRoomMockDto], 
+  @ApiProperty({
+    type: [PendingRoomMockDto],
     description: 'List of pending/started rooms',
     example: [
       {
@@ -57,7 +57,7 @@ export class PendingRoomsMockResponseDto {
         playerCount: 3,
         entryFee: 100000,
         status: 'pending',
-        minPlayers: 3
+        minPlayers: 3,
       },
       {
         activeRoomId: 2,
@@ -66,9 +66,9 @@ export class PendingRoomsMockResponseDto {
         playerCount: 1,
         entryFee: 50000,
         status: 'pending',
-        minPlayers: 2
-      }
-    ]
+        minPlayers: 2,
+      },
+    ],
   })
   rooms: PendingRoomMockDto[];
 }

@@ -11,7 +11,12 @@ import {
   HttpCode,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { WalletService } from './wallet.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -30,9 +35,9 @@ export class WalletController {
   @Get('transactions')
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get wallet transactions',
-    description: 'Retrieve all wallet transactions with optional type filter'
+    description: 'Retrieve all wallet transactions with optional type filter',
   })
   @ApiResponse({
     status: 200,

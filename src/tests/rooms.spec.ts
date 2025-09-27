@@ -21,7 +21,9 @@ describe('Rooms API (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    activeRoomRepository = moduleFixture.get(getRepositoryToken(ActiveRoomGlobal));
+    activeRoomRepository = moduleFixture.get(
+      getRepositoryToken(ActiveRoomGlobal),
+    );
     gameRoomRepository = moduleFixture.get(getRepositoryToken(GameRoom));
   });
 
@@ -53,7 +55,9 @@ describe('Rooms API (e2e)', () => {
       };
 
       // Mock repository methods
-      activeRoomRepository.findOne = jest.fn().mockResolvedValue(mockActiveRoom);
+      activeRoomRepository.findOne = jest
+        .fn()
+        .mockResolvedValue(mockActiveRoom);
 
       const response = await request(app.getHttpServer())
         .get('/rooms/1')
@@ -74,16 +78,11 @@ describe('Rooms API (e2e)', () => {
     it('should return 404 for non-existent room', async () => {
       activeRoomRepository.findOne = jest.fn().mockResolvedValue(null);
 
-      await request(app.getHttpServer())
-        .get('/rooms/99999')
-        .expect(404);
+      await request(app.getHttpServer()).get('/rooms/99999').expect(404);
     });
 
-
     it('should handle invalid room ID format', async () => {
-      await request(app.getHttpServer())
-        .get('/rooms/invalid')
-        .expect(400);
+      await request(app.getHttpServer()).get('/rooms/invalid').expect(400);
     });
 
     it('should include Persian date conversion', async () => {
@@ -107,7 +106,9 @@ describe('Rooms API (e2e)', () => {
         gameRoom: mockGameRoom,
       };
 
-      activeRoomRepository.findOne = jest.fn().mockResolvedValue(mockActiveRoom);
+      activeRoomRepository.findOne = jest
+        .fn()
+        .mockResolvedValue(mockActiveRoom);
 
       const response = await request(app.getHttpServer())
         .get('/rooms/1')

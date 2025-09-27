@@ -37,10 +37,14 @@ export class UsersService {
     });
 
     // محاسبه مبلغ کارت‌های رزرو شده در روم‌های pending
-    const reservedCardsAmount = await this.cardTransactionService.calculateUserReservedCardsAmount(userId);
-    
+    const reservedCardsAmount =
+      await this.cardTransactionService.calculateUserReservedCardsAmount(
+        userId,
+      );
+
     // محاسبه موجودی قابل استفاده (کسر مبلغ کارت‌های رزرو شده)
-    const availableWalletBalance = Number(user.walletBalance) - reservedCardsAmount;
+    const availableWalletBalance =
+      Number(user.walletBalance) - reservedCardsAmount;
 
     const createdAtPersian = this.convertToPersianDate(user.createdAt);
 
@@ -203,7 +207,6 @@ export class UsersService {
     // Return the updated user data
     return this.getUserById(id);
   }
-
 
   private convertToPersianDate(date: Date): string {
     // Convert Gregorian date to Persian (Jalali) calendar

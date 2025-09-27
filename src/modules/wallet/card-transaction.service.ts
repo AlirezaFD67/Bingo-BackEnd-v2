@@ -11,7 +11,6 @@ export class CardTransactionService {
     private readonly userReservedCardRepository: Repository<UserReservedCard>,
   ) {}
 
-
   /**
    * محاسبه مبلغ کارت‌های رزرو شده برای یک کاربر در روم‌های pending
    */
@@ -28,16 +27,16 @@ export class CardTransactionService {
     let totalAmount = 0;
     const roomFeesMap = new Map<number, number>();
 
-    reservedCards.forEach(card => {
+    reservedCards.forEach((card) => {
       const gameRoomId = card.activeRoom.gameRoomId;
       const entryFee = card.activeRoom.gameRoom.entryFee;
-      
+
       if (!roomFeesMap.has(gameRoomId)) {
         roomFeesMap.set(gameRoomId, entryFee);
       }
     });
 
-    roomFeesMap.forEach(entryFee => {
+    roomFeesMap.forEach((entryFee) => {
       totalAmount += entryFee;
     });
 

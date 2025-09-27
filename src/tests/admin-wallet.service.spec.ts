@@ -3,7 +3,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WalletService } from '../modules/admin/wallet.service';
 import { WalletTransaction } from '../entities/wallet-transaction.entity';
-import { TransactionType, TransactionStatus } from '../enums/transaction-type.enum';
+import {
+  TransactionType,
+  TransactionStatus,
+} from '../enums/transaction-type.enum';
 import { GetWalletTransactionsQueryDto } from '../modules/admin/dto/get-wallet-transactions-query.dto';
 
 describe('WalletService', () => {
@@ -61,8 +64,14 @@ describe('WalletService', () => {
       const result = await service.getTransactions(query);
 
       expect(result).toEqual(mockTransactions);
-      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('transaction.user', 'user');
-      expect(queryBuilder.orderBy).toHaveBeenCalledWith('transaction.createdAt', 'DESC');
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'transaction.user',
+        'user',
+      );
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+        'transaction.createdAt',
+        'DESC',
+      );
       expect(queryBuilder.andWhere).not.toHaveBeenCalled();
     });
 
@@ -82,13 +91,18 @@ describe('WalletService', () => {
       const queryBuilder = mockWalletTransactionRepository.createQueryBuilder();
       queryBuilder.getMany.mockResolvedValue(mockTransactions);
 
-      const query: GetWalletTransactionsQueryDto = { type: TransactionType.CHARGE };
+      const query: GetWalletTransactionsQueryDto = {
+        type: TransactionType.CHARGE,
+      };
       const result = await service.getTransactions(query);
 
       expect(result).toEqual(mockTransactions);
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('transaction.type = :type', { 
-        type: TransactionType.CHARGE 
-      });
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'transaction.type = :type',
+        {
+          type: TransactionType.CHARGE,
+        },
+      );
     });
 
     it('should return empty array when no transactions found', async () => {

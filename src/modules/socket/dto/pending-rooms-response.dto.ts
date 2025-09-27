@@ -24,6 +24,9 @@ export class PendingRoomDto {
 }
 
 export class PendingRoomsResponseDto {
-  @ApiProperty({ type: [PendingRoomDto], description: 'List of pending/started rooms' })
+  @ApiProperty({
+    type: [PendingRoomDto],
+    description: 'List of pending/started rooms',
+  })
   rooms: PendingRoomDto[];
 }

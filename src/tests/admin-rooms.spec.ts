@@ -22,7 +22,7 @@ describe('Admin Game Rooms (e2e)', () => {
       .post('/api/auth/verify-otp')
       .send({
         phoneNumber: '09111234567',
-        otpCode: '123456'
+        otpCode: '123456',
       });
 
     authToken = loginResponse.body.access_token;
@@ -38,7 +38,7 @@ describe('Admin Game Rooms (e2e)', () => {
         entryFee: 1000,
         startTimer: 30,
         type: RoomType.GLOBAL,
-        minPlayers: 2
+        minPlayers: 2,
       };
 
       const response = await request(app.getHttpServer())
@@ -60,7 +60,7 @@ describe('Admin Game Rooms (e2e)', () => {
         entryFee: -100,
         startTimer: 0,
         type: 999,
-        minPlayers: 0
+        minPlayers: 0,
       };
 
       await request(app.getHttpServer())
@@ -128,7 +128,7 @@ describe('Admin Game Rooms (e2e)', () => {
           entryFee: 2000,
           startTimer: 45,
           type: RoomType.PRIVATE,
-          minPlayers: 4
+          minPlayers: 4,
         });
 
       roomId = createResponse.body.id;
@@ -165,7 +165,7 @@ describe('Admin Game Rooms (e2e)', () => {
           entryFee: 1500,
           startTimer: 25,
           type: RoomType.GLOBAL,
-          minPlayers: 3
+          minPlayers: 3,
         });
 
       roomId = createResponse.body.id;
@@ -175,7 +175,7 @@ describe('Admin Game Rooms (e2e)', () => {
       const updateDto = {
         entryFee: 3000,
         startTimer: 60,
-        minPlayers: 5
+        minPlayers: 5,
       };
 
       const response = await request(app.getHttpServer())
@@ -210,7 +210,7 @@ describe('Admin Game Rooms (e2e)', () => {
           entryFee: 1000,
           startTimer: 30,
           type: RoomType.GLOBAL,
-          minPlayers: 2
+          minPlayers: 2,
         });
 
       roomId = createResponse.body.id;
@@ -237,9 +237,7 @@ describe('Admin Game Rooms (e2e)', () => {
 
   describe('Authentication', () => {
     it('should return 401 without token', async () => {
-      await request(app.getHttpServer())
-        .get('/api/admin/rooms')
-        .expect(401);
+      await request(app.getHttpServer()).get('/api/admin/rooms').expect(401);
     });
 
     it('should return 401 with invalid token', async () => {

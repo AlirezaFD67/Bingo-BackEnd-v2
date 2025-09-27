@@ -25,14 +25,37 @@ import { WalletModule } from '../wallet/wallet.module';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Reservation, GameRoom, AppSettings, WalletTransaction, ActiveRoomGlobal, Card, UserReservedCard, DrawnNumber]),
+    TypeOrmModule.forFeature([
+      User,
+      Reservation,
+      GameRoom,
+      AppSettings,
+      WalletTransaction,
+      ActiveRoomGlobal,
+      Card,
+      UserReservedCard,
+      DrawnNumber,
+    ]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here-change-in-production',
+      secret:
+        process.env.JWT_SECRET ||
+        'your-super-secret-jwt-key-here-change-in-production',
       signOptions: { expiresIn: '7d' },
     }),
     WalletModule,
   ],
-  controllers: [AdminController, GameRoomsController, SettingsController, WalletController],
-  providers: [UsersService, GameRoomsService, SettingsService, WalletService, AutoTimerService],
+  controllers: [
+    AdminController,
+    GameRoomsController,
+    SettingsController,
+    WalletController,
+  ],
+  providers: [
+    UsersService,
+    GameRoomsService,
+    SettingsService,
+    WalletService,
+    AutoTimerService,
+  ],
 })
 export class AdminModule {}

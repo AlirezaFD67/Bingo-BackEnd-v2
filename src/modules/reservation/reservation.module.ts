@@ -40,5 +40,3 @@ import { WalletModule } from '../wallet/wallet.module';
   providers: [ReservationService],
 })
 export class ReservationModule {}
-
-

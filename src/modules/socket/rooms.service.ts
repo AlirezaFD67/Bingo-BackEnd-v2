@@ -37,11 +37,9 @@ export class RoomsService {
     try {
       // Get all active rooms with pending or started status
       const activeRooms = await this.activeRoomRepository.find({
-        where: [
-          { status: RoomStatus.PENDING },
-          { status: RoomStatus.STARTED },
-        ],
+        where: [{ status: RoomStatus.PENDING }, { status: RoomStatus.STARTED }],
         relations: ['gameRoom'],
+        order: { gameRoom: { entryFee: 'ASC' } }, // مرتب‌سازی بر اساس entryFee از کم به زیاد
       });
 
       const result: PendingRoomDto[] = [];
@@ -50,8 +48,8 @@ export class RoomsService {
         // Count unique players for this active room
         const playerCountResult = await this.reservationRepository
           .createQueryBuilder('reservation')
-          .where('reservation.activeRoomId = :activeRoomId', { 
-            activeRoomId: activeRoom.id 
+          .where('reservation.activeRoomId = :activeRoomId', {
+            activeRoomId: activeRoom.id,
           })
           .select('COUNT(DISTINCT reservation.userId)', 'count')
           .getRawOne();
@@ -92,8 +90,8 @@ export class RoomsService {
       // Count total reserved cards for this active room
       const reservedCardsResult = await this.reservationRepository
         .createQueryBuilder('reservation')
-        .where('reservation.activeRoomId = :activeRoomId', { 
-          activeRoomId: activeRoomId 
+        .where('reservation.activeRoomId = :activeRoomId', {
+          activeRoomId: activeRoomId,
         })
         .select('SUM(reservation.cardCount)', 'totalCards')
         .getRawOne();
@@ -104,8 +102,8 @@ export class RoomsService {
       // Count unique players for this active room
       const playerCountResult = await this.reservationRepository
         .createQueryBuilder('reservation')
-        .where('reservation.activeRoomId = :activeRoomId', { 
-          activeRoomId: activeRoomId 
+        .where('reservation.activeRoomId = :activeRoomId', {
+          activeRoomId: activeRoomId,
         })
         .select('COUNT(DISTINCT reservation.userId)', 'count')
         .getRawOne();
@@ -119,15 +117,22 @@ export class RoomsService {
         playerCount: playerCount,
       };
 
-      this.logger.log(`Room info for activeRoomId ${activeRoomId}: ${JSON.stringify(result)}`);
+      this.logger.log(
+        `Room info for activeRoomId ${activeRoomId}: ${JSON.stringify(result)}`,
+      );
       return result;
     } catch (error) {
-      this.logger.error(`Error fetching room info for activeRoomId ${activeRoomId}:`, error);
+      this.logger.error(
+        `Error fetching room info for activeRoomId ${activeRoomId}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  async getDrawnNumbers(activeRoomId: number): Promise<{ drawnNumbers: number[]; total: number }> {
+  async getDrawnNumbers(
+    activeRoomId: number,
+  ): Promise<{ drawnNumbers: number[]; total: number }> {
     // Fetch all drawn numbers for the room ordered by createdAt ASC
     const rows = await this.drawnNumberRepository.find({
       where: { activeRoomId },
@@ -145,12 +150,16 @@ export class RoomsService {
   async checkLineWinners(activeRoomId: number): Promise<boolean> {
     try {
       // Check if line winners already exist for this room
-      const existingLineWinners = await this.activeRoomWinnerRepository.findOne({
-        where: { activeRoomId, winType: 'line' },
-      });
+      const existingLineWinners = await this.activeRoomWinnerRepository.findOne(
+        {
+          where: { activeRoomId, winType: 'line' },
+        },
+      );
 
       if (existingLineWinners) {
-        this.logger.log(`Line winners already exist for activeRoomId: ${activeRoomId}`);
+        this.logger.log(
+          `Line winners already exist for activeRoomId: ${activeRoomId}`,
+        );
         return true; // Line checking should stop
       }
 
@@ -160,7 +169,7 @@ export class RoomsService {
         order: { createdAt: 'ASC' },
         select: ['number'],
       });
-      const drawnNumbersList = drawnNumbers.map(dn => dn.number);
+      const drawnNumbersList = drawnNumbers.map((dn) => dn.number);
 
       // Get all reserved cards for this room
       const reservedCards = await this.userReservedCardRepository.find({
@@ -177,12 +186,16 @@ export class RoomsService {
         // Check each line (row) of the card
         for (let row = 0; row < matrix.length; row++) {
           const lineNumbers = matrix[row];
-          const isLineComplete = lineNumbers.every(num => drawnNumbersList.includes(num));
+          const isLineComplete = lineNumbers.every((num) =>
+            drawnNumbersList.includes(num),
+          );
 
           if (isLineComplete) {
             // Check if this user already has a line winner
-            const userAlreadyWon = lineWinners.some(winner => winner.userId === reservedCard.userId);
-            
+            const userAlreadyWon = lineWinners.some(
+              (winner) => winner.userId === reservedCard.userId,
+            );
+
             if (!userAlreadyWon) {
               lineWinners.push({
                 userId: reservedCard.userId,
@@ -205,13 +218,18 @@ export class RoomsService {
           });
         }
 
-        this.logger.log(`Found ${lineWinners.length} line winners for activeRoomId: ${activeRoomId}`);
+        this.logger.log(
+          `Found ${lineWinners.length} line winners for activeRoomId: ${activeRoomId}`,
+        );
         return true; // Line checking should stop
       }
 
       return false; // No line winners found, continue checking
     } catch (error) {
-      this.logger.error(`Error checking line winners for activeRoomId ${activeRoomId}:`, error);
+      this.logger.error(
+        `Error checking line winners for activeRoomId ${activeRoomId}:`,
+        error,
+      );
       return false;
     }
   }
@@ -228,7 +246,7 @@ export class RoomsService {
         order: { createdAt: 'ASC' },
         select: ['number'],
       });
-      const drawnNumbersList = drawnNumbers.map(dn => dn.number);
+      const drawnNumbersList = drawnNumbers.map((dn) => dn.number);
 
       // Get all reserved cards for this room
       const reservedCards = await this.userReservedCardRepository.find({
@@ -244,12 +262,16 @@ export class RoomsService {
 
         // Check if all numbers in the card are drawn
         const allCardNumbers = matrix.flat();
-        const isCardComplete = allCardNumbers.every(num => drawnNumbersList.includes(num));
+        const isCardComplete = allCardNumbers.every((num) =>
+          drawnNumbersList.includes(num),
+        );
 
         if (isCardComplete) {
           // Check if this user already has a full winner
-          const userAlreadyWon = fullWinners.some(winner => winner.userId === reservedCard.userId);
-          
+          const userAlreadyWon = fullWinners.some(
+            (winner) => winner.userId === reservedCard.userId,
+          );
+
           if (!userAlreadyWon) {
             fullWinners.push({
               userId: reservedCard.userId,
@@ -273,16 +295,21 @@ export class RoomsService {
         // Mark the room as finished
         await this.activeRoomRepository.update(
           { id: activeRoomId },
-          { status: RoomStatus.FINISHED }
+          { status: RoomStatus.FINISHED },
         );
 
-        this.logger.log(`Found ${fullWinners.length} full winners for activeRoomId: ${activeRoomId}. Game finished.`);
+        this.logger.log(
+          `Found ${fullWinners.length} full winners for activeRoomId: ${activeRoomId}. Game finished.`,
+        );
         return true; // Game should end
       }
 
       return false; // No full winners found, continue game
     } catch (error) {
-      this.logger.error(`Error checking full winners for activeRoomId ${activeRoomId}:`, error);
+      this.logger.error(
+        `Error checking full winners for activeRoomId ${activeRoomId}:`,
+        error,
+      );
       return false;
     }
   }
@@ -303,16 +330,16 @@ export class RoomsService {
       });
 
       const lineWinners = winners
-        .filter(w => w.winType === 'line')
-        .map(w => ({
+        .filter((w) => w.winType === 'line')
+        .map((w) => ({
           userId: w.userId,
           cardId: w.cardId,
           amount: 50000, // Line winner amount
         }));
 
       const fullWinners = winners
-        .filter(w => w.winType === 'full')
-        .map(w => ({
+        .filter((w) => w.winType === 'full')
+        .map((w) => ({
           userId: w.userId,
           cardId: w.cardId,
           amount: 150000, // Full winner amount
@@ -330,7 +357,10 @@ export class RoomsService {
         gameFinished,
       };
     } catch (error) {
-      this.logger.error(`Error getting winners for activeRoomId ${activeRoomId}:`, error);
+      this.logger.error(
+        `Error getting winners for activeRoomId ${activeRoomId}:`,
+        error,
+      );
       return {
         lineWinners: [],
         fullWinners: [],

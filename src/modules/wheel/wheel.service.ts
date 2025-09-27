@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
@@ -55,7 +59,9 @@ export class WheelService {
     // محاسبه زمان باقی‌مانده
     const remainingTimeMs = hours24InMs - timeSinceLastSpin;
     const remainingHours = Math.floor(remainingTimeMs / (60 * 60 * 1000));
-    const remainingMinutes = Math.floor((remainingTimeMs % (60 * 60 * 1000)) / (60 * 1000));
+    const remainingMinutes = Math.floor(
+      (remainingTimeMs % (60 * 60 * 1000)) / (60 * 1000),
+    );
 
     return {
       canSpin: false,
@@ -66,7 +72,10 @@ export class WheelService {
   /**
    * چرخش گردونه و دریافت جایزه
    */
-  async spinWheel(userId: number, dto: SpinWheelDto): Promise<SpinWheelResponseDto> {
+  async spinWheel(
+    userId: number,
+    dto: SpinWheelDto,
+  ): Promise<SpinWheelResponseDto> {
     // بررسی وجود کاربر
     const user = await this.userRepository.findOne({
       where: { id: userId },
@@ -79,13 +88,17 @@ export class WheelService {
     // بررسی محدودیت زمانی
     const canSpinResult = await this.canSpin(userId);
     if (!canSpinResult.canSpin) {
-      throw new BadRequestException(ERROR_MESSAGES.WHEEL_SPIN_LIMIT_EXCEEDED.error);
+      throw new BadRequestException(
+        ERROR_MESSAGES.WHEEL_SPIN_LIMIT_EXCEEDED.error,
+      );
     }
 
     // اعتبارسنجی مقدار جایزه
     const allowedAmounts = [20000, 10000, 5000, 0];
     if (!allowedAmounts.includes(dto.value)) {
-      throw new BadRequestException(ERROR_MESSAGES.INVALID_WHEEL_PRIZE_AMOUNT.error);
+      throw new BadRequestException(
+        ERROR_MESSAGES.INVALID_WHEEL_PRIZE_AMOUNT.error,
+      );
     }
 
     // ذخیره چرخش در دیتابیس
@@ -102,7 +115,7 @@ export class WheelService {
     // اگر جایزه بیشتر از صفر است، به کیف پول اضافه کن
     if (dto.value > 0) {
       newBalance = user.walletBalance + dto.value;
-      
+
       // بروزرسانی موجودی کیف پول
       await this.userRepository.update(userId, {
         walletBalance: newBalance,
@@ -115,7 +128,7 @@ export class WheelService {
         type: TransactionType.WHEEL_SPIN,
         description: 'جایزه گردونه',
       });
-      
+
       await this.walletTransactionRepository.save(transaction);
     }
 
@@ -123,7 +136,8 @@ export class WheelService {
       success: true,
       prizeAmount: dto.value,
       newBalance,
-      message: dto.value > 0 ? 'جایزه گردونه با موفقیت ثبت شد' : 'چرخش گردونه ثبت شد',
+      message:
+        dto.value > 0 ? 'جایزه گردونه با موفقیت ثبت شد' : 'چرخش گردونه ثبت شد',
     };
   }
 }

@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { WalletTransaction } from '../../entities/wallet-transaction.entity';
 import { User } from '../../entities/user.entity';
-import { TransactionType, TransactionStatus } from '../../enums/transaction-type.enum';
+import {
+  TransactionType,
+  TransactionStatus,
+} from '../../enums/transaction-type.enum';
 import { GetWalletTransactionsQueryDto } from './dto/get-wallet-transactions-query.dto';
 import { WithdrawWalletResponseDto } from '../wallet/dto/withdraw-wallet-response.dto';
 
@@ -17,7 +24,9 @@ export class WalletService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getTransactions(query: GetWalletTransactionsQueryDto): Promise<WalletTransaction[]> {
+  async getTransactions(
+    query: GetWalletTransactionsQueryDto,
+  ): Promise<WalletTransaction[]> {
     const queryBuilder = this.walletTransactionRepository
       .createQueryBuilder('transaction')
       .leftJoinAndSelect('transaction.user', 'user')

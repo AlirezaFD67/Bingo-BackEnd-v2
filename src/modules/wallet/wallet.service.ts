@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { User } from '../../entities/user.entity';
 import { WalletTransaction } from '../../entities/wallet-transaction.entity';
-import { TransactionType, TransactionStatus } from '../../enums/transaction-type.enum';
+import {
+  TransactionType,
+  TransactionStatus,
+} from '../../enums/transaction-type.enum';
 import { ChargeWalletDto } from './dto/charge-wallet.dto';
 import { ChargeWalletResponseDto } from './dto/charge-wallet-response.dto';
 import { WithdrawWalletDto } from './dto/withdraw-wallet.dto';
@@ -21,7 +28,10 @@ export class WalletService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async chargeWallet(userId: number, chargeDto: ChargeWalletDto): Promise<ChargeWalletResponseDto> {
+  async chargeWallet(
+    userId: number,
+    chargeDto: ChargeWalletDto,
+  ): Promise<ChargeWalletResponseDto> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -45,7 +55,10 @@ export class WalletService {
         description: 'شارژ کیف پول',
       });
 
-      const savedTransaction = await queryRunner.manager.save(WalletTransaction, transaction);
+      const savedTransaction = await queryRunner.manager.save(
+        WalletTransaction,
+        transaction,
+      );
 
       // به‌روزرسانی موجودی کاربر
       await queryRunner.manager.update(
@@ -72,7 +85,10 @@ export class WalletService {
     }
   }
 
-  async withdrawWallet(userId: number, withdrawDto: WithdrawWalletDto): Promise<WithdrawWalletResponseDto> {
+  async withdrawWallet(
+    userId: number,
+    withdrawDto: WithdrawWalletDto,
+  ): Promise<WithdrawWalletResponseDto> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -101,7 +117,10 @@ export class WalletService {
         description: 'درخواست برداشت از کیف پول',
       });
 
-      const savedTransaction = await queryRunner.manager.save(WalletTransaction, transaction);
+      const savedTransaction = await queryRunner.manager.save(
+        WalletTransaction,
+        transaction,
+      );
 
       // کم کردن مبلغ از موجودی کاربر
       await queryRunner.manager.update(
@@ -154,14 +173,18 @@ export class WalletService {
 
     // اعمال فیلتر وضعیت تراکنش
     if (filters.status) {
-      queryBuilder.andWhere('transaction.status = :status', { status: filters.status });
+      queryBuilder.andWhere('transaction.status = :status', {
+        status: filters.status,
+      });
     }
 
     // اعمال فیلتر روزهای گذشته
     if (filters.days) {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - filters.days);
-      queryBuilder.andWhere('transaction.createdAt >= :startDate', { startDate });
+      queryBuilder.andWhere('transaction.createdAt >= :startDate', {
+        startDate,
+      });
     }
 
     // اجرای کوئری
