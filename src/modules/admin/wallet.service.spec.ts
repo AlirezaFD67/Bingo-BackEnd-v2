@@ -48,9 +48,7 @@ describe('AdminWalletService', () => {
     walletTransactionRepository = module.get<Repository<WalletTransaction>>(
       getRepositoryToken(WalletTransaction),
     );
-    userRepository = module.get<Repository<User>>(
-      getRepositoryToken(User),
-    );
+    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
   it('should be defined', () => {

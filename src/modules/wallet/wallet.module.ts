@@ -11,7 +11,12 @@ import { Reservation } from '../../entities/reservation.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, WalletTransaction, UserReservedCard, Reservation]),
+    TypeOrmModule.forFeature([
+      User,
+      WalletTransaction,
+      UserReservedCard,
+      Reservation,
+    ]),
     JwtModule.register({}),
   ],
   controllers: [WalletController],

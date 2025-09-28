@@ -167,9 +167,11 @@ export class AutoTimerService implements OnModuleInit {
         activeRoom.status = RoomStatus.STARTED;
         activeRoom.updatedAt = new Date();
         await this.activeRoomRepository.save(activeRoom);
-        
-        this.logger.log(`Game started for active room ${activeRoom.id} - status changed to started`);
-        
+
+        this.logger.log(
+          `Game started for active room ${activeRoom.id} - status changed to started`,
+        );
+
         // Then check player count and proceed
         await this.checkPlayerCountAndProceed(activeRoom, gameRoom);
       }

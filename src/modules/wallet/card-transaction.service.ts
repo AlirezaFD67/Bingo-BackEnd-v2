@@ -20,7 +20,9 @@ export class CardTransactionService {
       .leftJoin('r.activeRoom', 'ar')
       .where('r.userId = :userId', { userId })
       .andWhere('ar.status = :status', { status: RoomStatus.PENDING })
-      .andWhere('r.status = :reservationStatus', { reservationStatus: 'pending' })
+      .andWhere('r.status = :reservationStatus', {
+        reservationStatus: 'pending',
+      })
       .select(['r.id', 'r.cardCount', 'r.entryFee', 'ar.id'])
       .getMany();
 
@@ -28,7 +30,8 @@ export class CardTransactionService {
 
     reservations.forEach((reservation) => {
       // محاسبه مبلغ کل برای این رزرو: تعداد کارت × هزینه ورودی
-      const reservationTotal = reservation.cardCount * Number(reservation.entryFee);
+      const reservationTotal =
+        reservation.cardCount * Number(reservation.entryFee);
       totalAmount += reservationTotal;
     });
 
