@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { SocketMockService } from './socket-mock.service';
 import { PendingRoomsMockResponseDto } from './dto/pending-rooms-mock.dto';
@@ -160,6 +160,11 @@ export class SocketMockController {
   async getRoomInfo(
     @Query('activeRoomId') activeRoomId: number,
   ): Promise<RoomInfoResponseDto> {
+    // Validation: Check if activeRoomId is provided and valid
+    if (!activeRoomId || activeRoomId <= 0 || !Number.isInteger(activeRoomId)) {
+      throw new BadRequestException('activeRoomId is required and must be a positive integer');
+    }
+
     try {
       // Get real data from socket service
       return await this.roomsService.getRoomInfo(activeRoomId);
@@ -266,6 +271,11 @@ export class SocketMockController {
       drawnNumbers: number[];
     };
   }> {
+    // Validation: Check if activeRoomId is provided and valid
+    if (!activeRoomId || activeRoomId <= 0 || !Number.isInteger(activeRoomId)) {
+      throw new BadRequestException('activeRoomId is required and must be a positive integer');
+    }
+
     try {
       // Get real data from socket service
       const { drawnNumbers, total } =
@@ -431,6 +441,11 @@ export class SocketMockController {
       gameFinished: boolean;
     };
   }> {
+    // Validation: Check if activeRoomId is provided and valid
+    if (!activeRoomId || activeRoomId <= 0 || !Number.isInteger(activeRoomId)) {
+      throw new BadRequestException('activeRoomId is required and must be a positive integer');
+    }
+
     try {
       // Get real data from socket service
       const winners = await this.roomsService.getWinners(activeRoomId);
