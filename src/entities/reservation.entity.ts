@@ -7,6 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { ActiveRoomGlobal } from './active-room-global.entity';
 
 export enum ReservationStatus {
   PENDING = 'pending',
@@ -45,4 +46,8 @@ export class Reservation {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @ManyToOne(() => ActiveRoomGlobal, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'activeRoomId' })
+  activeRoom: ActiveRoomGlobal;
 }

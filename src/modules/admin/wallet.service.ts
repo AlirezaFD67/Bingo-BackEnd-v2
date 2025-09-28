@@ -1,10 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { WalletTransaction } from '../../entities/wallet-transaction.entity';
 import { User } from '../../entities/user.entity';
-import { TransactionType, TransactionStatus } from '../../enums/transaction-type.enum';
+import {
+  TransactionType,
+  TransactionStatus,
+} from '../../enums/transaction-type.enum';
 import { GetWalletTransactionsQueryDto } from './dto/get-wallet-transactions-query.dto';
+import { AdminWalletTransactionResponseDto } from './dto/wallet-transaction-response.dto';
 import { WithdrawWalletResponseDto } from '../wallet/dto/withdraw-wallet-response.dto';
 
 @Injectable()
@@ -17,7 +25,9 @@ export class WalletService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getTransactions(query: GetWalletTransactionsQueryDto): Promise<WalletTransaction[]> {
+  async getTransactions(
+    query: GetWalletTransactionsQueryDto,
+  ): Promise<AdminWalletTransactionResponseDto[]> {
     const queryBuilder = this.walletTransactionRepository
       .createQueryBuilder('transaction')
       .leftJoinAndSelect('transaction.user', 'user')
@@ -27,7 +37,18 @@ export class WalletService {
       queryBuilder.andWhere('transaction.type = :type', { type: query.type });
     }
 
-    return queryBuilder.getMany();
+    const transactions = await queryBuilder.getMany();
+    
+    // تبدیل به DTO
+    return transactions.map((transaction) => ({
+      id: transaction.id,
+      userId: transaction.userId,
+      amount: transaction.amount,
+      type: transaction.type,
+      status: transaction.status,
+      description: transaction.description,
+      createdAt: transaction.createdAt,
+    }));
   }
 
   async confirmWithdraw(txId: number): Promise<WithdrawWalletResponseDto> {

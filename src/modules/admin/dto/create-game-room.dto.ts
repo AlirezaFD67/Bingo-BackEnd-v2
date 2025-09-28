@@ -41,5 +41,3 @@ export class CreateGameRoomDto {
   @Min(2)
   minPlayers: number;
 }
-
-

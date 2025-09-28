@@ -45,5 +45,3 @@ export class GameRoomResponseDto {
   })
   createdAt: Date;
 }
-
-

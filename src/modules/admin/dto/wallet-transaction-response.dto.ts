@@ -1,7 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TransactionType, TransactionStatus } from '../../../enums/transaction-type.enum';
+import {
+  TransactionType,
+  TransactionStatus,
+} from '../../../enums/transaction-type.enum';
 
-export class WalletTransactionResponseDto {
+export class AdminWalletTransactionResponseDto {
   @ApiProperty({ description: 'Transaction ID', example: 1 })
   id: number;
 
@@ -11,30 +14,30 @@ export class WalletTransactionResponseDto {
   @ApiProperty({ description: 'Transaction amount', example: 10000 })
   amount: number;
 
-  @ApiProperty({ 
-    description: 'Transaction type', 
+  @ApiProperty({
+    description: 'Transaction type',
     enum: TransactionType,
-    example: TransactionType.CHARGE 
+    example: TransactionType.CHARGE,
   })
   type: TransactionType;
 
-  @ApiProperty({ 
-    description: 'Transaction status', 
+  @ApiProperty({
+    description: 'Transaction status',
     enum: TransactionStatus,
-    example: TransactionStatus.CONFIRMED 
+    example: TransactionStatus.CONFIRMED,
   })
   status: TransactionStatus;
 
-  @ApiProperty({ 
-    description: 'Transaction description', 
+  @ApiProperty({
+    description: 'Transaction description',
     example: 'Deposit via bank transfer',
-    required: false 
+    required: false,
   })
   description?: string;
 
-  @ApiProperty({ 
-    description: 'Transaction creation date', 
-    example: '2024-01-15T10:30:00.000Z' 
+  @ApiProperty({
+    description: 'Transaction creation date',
+    example: '2024-01-15T10:30:00.000Z',
   })
   createdAt: Date;
 }

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Reservation } from '../../entities/reservation.entity';
@@ -31,12 +35,17 @@ export class ReservationService {
     private readonly cardTransactionService: CardTransactionService,
   ) {}
 
-  async reserve(userId: number, dto: ReserveRequestDto): Promise<ReserveResponseDto> {
+  async reserve(
+    userId: number,
+    dto: ReserveRequestDto,
+  ): Promise<ReserveResponseDto> {
     if (!userId) {
       throw new BadRequestException('Invalid user');
     }
 
-    const active = await this.activeRoomRepository.findOne({ where: { id: dto.activeRoomId } });
+    const active = await this.activeRoomRepository.findOne({
+      where: { id: dto.activeRoomId },
+    });
     if (!active) {
       throw new NotFoundException('Active room not found');
     }
@@ -44,7 +53,9 @@ export class ReservationService {
       throw new BadRequestException('Room is not pending');
     }
 
-    const gameRoom = await this.gameRoomRepository.findOne({ where: { id: active.gameRoomId } });
+    const gameRoom = await this.gameRoomRepository.findOne({
+      where: { id: active.gameRoomId },
+    });
     if (!gameRoom) {
       throw new NotFoundException('Game room not found');
     }
@@ -64,8 +75,12 @@ export class ReservationService {
       throw new NotFoundException('User not found');
     }
 
-    const reservedCardsAmount = await this.cardTransactionService.calculateUserReservedCardsAmount(userId);
-    const availableWalletBalance = Number(user.walletBalance) - reservedCardsAmount;
+    const reservedCardsAmount =
+      await this.cardTransactionService.calculateUserReservedCardsAmount(
+        userId,
+      );
+    const availableWalletBalance =
+      Number(user.walletBalance) - reservedCardsAmount;
 
     return {
       id: saved.id,
@@ -92,5 +107,3 @@ export class ReservationService {
     }));
   }
 }
-
-

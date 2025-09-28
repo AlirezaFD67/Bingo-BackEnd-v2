@@ -82,11 +82,19 @@ describe('WinSocket', () => {
 
     gateway = module.get<RoomsGateway>(RoomsGateway);
     roomsService = module.get<RoomsService>(RoomsService);
-    activeRoomRepository = module.get<Repository<ActiveRoomGlobal>>(getRepositoryToken(ActiveRoomGlobal));
-    activeRoomWinnerRepository = module.get<Repository<ActiveRoomWinner>>(getRepositoryToken(ActiveRoomWinner));
-    userReservedCardRepository = module.get<Repository<UserReservedCard>>(getRepositoryToken(UserReservedCard));
+    activeRoomRepository = module.get<Repository<ActiveRoomGlobal>>(
+      getRepositoryToken(ActiveRoomGlobal),
+    );
+    activeRoomWinnerRepository = module.get<Repository<ActiveRoomWinner>>(
+      getRepositoryToken(ActiveRoomWinner),
+    );
+    userReservedCardRepository = module.get<Repository<UserReservedCard>>(
+      getRepositoryToken(UserReservedCard),
+    );
     cardRepository = module.get<Repository<Card>>(getRepositoryToken(Card));
-    drawnNumberRepository = module.get<Repository<DrawnNumber>>(getRepositoryToken(DrawnNumber));
+    drawnNumberRepository = module.get<Repository<DrawnNumber>>(
+      getRepositoryToken(DrawnNumber),
+    );
   });
 
   afterEach(() => {
@@ -168,9 +176,21 @@ describe('WinSocket', () => {
     it('should check full winners successfully', async () => {
       const activeRoomId = 1;
       const mockDrawnNumbers = [
-        { number: 1 }, { number: 2 }, { number: 3 }, { number: 4 }, { number: 5 },
-        { number: 6 }, { number: 7 }, { number: 8 }, { number: 9 }, { number: 10 },
-        { number: 11 }, { number: 12 }, { number: 13 }, { number: 14 }, { number: 15 },
+        { number: 1 },
+        { number: 2 },
+        { number: 3 },
+        { number: 4 },
+        { number: 5 },
+        { number: 6 },
+        { number: 7 },
+        { number: 8 },
+        { number: 9 },
+        { number: 10 },
+        { number: 11 },
+        { number: 12 },
+        { number: 13 },
+        { number: 14 },
+        { number: 15 },
       ];
       const mockReservedCards = [
         {
@@ -202,7 +222,7 @@ describe('WinSocket', () => {
       });
       expect(mockActiveRoomRepository.update).toHaveBeenCalledWith(
         { id: activeRoomId },
-        { status: 'finished' }
+        { status: 'finished' },
       );
     });
 
@@ -251,7 +271,9 @@ describe('WinSocket', () => {
     it('should handle error when checking line winners', async () => {
       const activeRoomId = 1;
 
-      mockActiveRoomWinnerRepository.findOne.mockRejectedValue(new Error('Database error'));
+      mockActiveRoomWinnerRepository.findOne.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       const result = await roomsService.checkLineWinners(activeRoomId);
 
@@ -261,7 +283,9 @@ describe('WinSocket', () => {
     it('should handle error when checking full winners', async () => {
       const activeRoomId = 1;
 
-      mockDrawnNumberRepository.find.mockRejectedValue(new Error('Database error'));
+      mockDrawnNumberRepository.find.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       const result = await roomsService.checkFullWinners(activeRoomId);
 
@@ -271,7 +295,9 @@ describe('WinSocket', () => {
     it('should handle error when getting winners', async () => {
       const activeRoomId = 1;
 
-      mockActiveRoomWinnerRepository.find.mockRejectedValue(new Error('Database error'));
+      mockActiveRoomWinnerRepository.find.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       const result = await roomsService.getWinners(activeRoomId);
 
@@ -340,7 +366,9 @@ describe('WinSocket', () => {
         emit: jest.fn(),
       } as any;
 
-      jest.spyOn(roomsService, 'getWinners').mockRejectedValue(new Error('Service error'));
+      jest
+        .spyOn(roomsService, 'getWinners')
+        .mockRejectedValue(new Error('Service error'));
 
       await gateway.handleWinRequest({ activeRoomId: 1 });
 

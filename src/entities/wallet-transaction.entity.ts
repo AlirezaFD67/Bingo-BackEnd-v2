@@ -7,7 +7,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
-import { TransactionType, TransactionStatus } from '../enums/transaction-type.enum';
+import {
+  TransactionType,
+  TransactionStatus,
+} from '../enums/transaction-type.enum';
 
 @Entity('wallet_transactions')
 export class WalletTransaction {

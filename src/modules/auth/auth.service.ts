@@ -139,11 +139,12 @@ export class AuthService {
     // اگر کاربر جدید است، ایجاد رکورد جدید با کد رفرال
     if (!user) {
       const referralCode = await this.generateUniqueReferralCode();
-      const finalReferralCode = incomingReferral && incomingReferral.trim() !== ''
-        ? incomingReferral
-        : otpCode.incomingReferral && otpCode.incomingReferral.trim() !== ''
-          ? otpCode.incomingReferral
-          : undefined;
+      const finalReferralCode =
+        incomingReferral && incomingReferral.trim() !== ''
+          ? incomingReferral
+          : otpCode.incomingReferral && otpCode.incomingReferral.trim() !== ''
+            ? otpCode.incomingReferral
+            : undefined;
 
       user = this.userRepository.create({
         phoneNumber,
@@ -207,7 +208,10 @@ export class AuthService {
   /**
    * اعطای پاداش رفرال به کاربر معرف
    */
-  private async giveReferralReward(referralCode: string, newUserId: number): Promise<void> {
+  private async giveReferralReward(
+    referralCode: string,
+    newUserId: number,
+  ): Promise<void> {
     try {
       // یافتن کاربر معرف
       const referrerUser = await this.userRepository.findOne({
@@ -215,7 +219,9 @@ export class AuthService {
       });
 
       if (!referrerUser) {
-        console.error(`Referrer user not found for referral code: ${referralCode}`);
+        console.error(
+          `Referrer user not found for referral code: ${referralCode}`,
+        );
         return;
       }
 
@@ -232,7 +238,9 @@ export class AuthService {
       const rewardAmount = parseInt(referralRewardSetting.value, 10);
 
       if (rewardAmount <= 0) {
-        console.log('Referral reward amount is zero or negative, skipping reward');
+        console.log(
+          'Referral reward amount is zero or negative, skipping reward',
+        );
         return;
       }
 
@@ -252,7 +260,9 @@ export class AuthService {
 
       await this.walletTransactionRepository.save(transaction);
 
-      console.log(`Referral reward of ${rewardAmount} given to user ${referrerUser.id} for referring user ${newUserId}`);
+      console.log(
+        `Referral reward of ${rewardAmount} given to user ${referrerUser.id} for referring user ${newUserId}`,
+      );
     } catch (error) {
       console.error('Error giving referral reward:', error);
       // در صورت خطا، فرایند ثبت نام را متوقف نکنیم

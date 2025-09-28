@@ -1,44 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserReservedCard } from '../../entities/user-reserved-card.entity';
+import { Reservation } from '../../entities/reservation.entity';
 import { RoomStatus } from '../../enums/room-status.enum';
 
 @Injectable()
 export class CardTransactionService {
   constructor(
-    @InjectRepository(UserReservedCard)
-    private readonly userReservedCardRepository: Repository<UserReservedCard>,
+    @InjectRepository(Reservation)
+    private readonly reservationRepository: Repository<Reservation>,
   ) {}
-
 
   /**
    * محاسبه مبلغ کارت‌های رزرو شده برای یک کاربر در روم‌های pending
    */
   async calculateUserReservedCardsAmount(userId: number): Promise<number> {
-    const reservedCards = await this.userReservedCardRepository
-      .createQueryBuilder('urc')
-      .leftJoin('urc.activeRoom', 'ar')
-      .leftJoin('ar.gameRoom', 'gr')
-      .where('urc.userId = :userId', { userId })
+    const reservations = await this.reservationRepository
+      .createQueryBuilder('r')
+      .leftJoin('r.activeRoom', 'ar')
+      .where('r.userId = :userId', { userId })
       .andWhere('ar.status = :status', { status: RoomStatus.PENDING })
-      .select(['urc.id', 'ar.gameRoomId', 'gr.entryFee'])
+      .andWhere('r.status = :reservationStatus', { reservationStatus: 'pending' })
+      .select(['r.id', 'r.cardCount', 'r.entryFee', 'ar.id'])
       .getMany();
 
     let totalAmount = 0;
-    const roomFeesMap = new Map<number, number>();
 
-    reservedCards.forEach(card => {
-      const gameRoomId = card.activeRoom.gameRoomId;
-      const entryFee = card.activeRoom.gameRoom.entryFee;
-      
-      if (!roomFeesMap.has(gameRoomId)) {
-        roomFeesMap.set(gameRoomId, entryFee);
-      }
-    });
-
-    roomFeesMap.forEach(entryFee => {
-      totalAmount += entryFee;
+    reservations.forEach((reservation) => {
+      // محاسبه مبلغ کل برای این رزرو: تعداد کارت × هزینه ورودی
+      const reservationTotal = reservation.cardCount * Number(reservation.entryFee);
+      totalAmount += reservationTotal;
     });
 
     return totalAmount;

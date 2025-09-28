@@ -12,5 +12,3 @@ export class ReserveRequestDto {
   @Min(1)
   cardCount: number;
 }
-
-

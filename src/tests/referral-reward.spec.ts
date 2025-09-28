@@ -112,7 +112,9 @@ describe('ReferralRewardSystem', () => {
       } as AppSettings;
 
       mockUserRepository.findOne.mockResolvedValueOnce(referrerUser);
-      mockAppSettingsRepository.findOne.mockResolvedValueOnce(referralRewardSetting);
+      mockAppSettingsRepository.findOne.mockResolvedValueOnce(
+        referralRewardSetting,
+      );
       mockUserRepository.update.mockResolvedValueOnce({ affected: 1 });
       mockWalletTransactionRepository.create.mockReturnValueOnce({
         userId: referrerId,
@@ -210,7 +212,9 @@ describe('ReferralRewardSystem', () => {
       } as AppSettings;
 
       mockUserRepository.findOne.mockResolvedValueOnce(referrerUser);
-      mockAppSettingsRepository.findOne.mockResolvedValueOnce(referralRewardSetting);
+      mockAppSettingsRepository.findOne.mockResolvedValueOnce(
+        referralRewardSetting,
+      );
 
       // Act
       await (authService as any).giveReferralReward(referralCode, newUserId);
@@ -231,7 +235,9 @@ describe('ReferralRewardSystem', () => {
       const referralCode = '123456';
       const newUserId = 2;
 
-      mockUserRepository.findOne.mockRejectedValueOnce(new Error('Database error'));
+      mockUserRepository.findOne.mockRejectedValueOnce(
+        new Error('Database error'),
+      );
 
       // Act & Assert
       await expect(
@@ -285,7 +291,10 @@ describe('ReferralRewardSystem', () => {
       mockJwtService.sign.mockReturnValueOnce('mock-jwt-token');
 
       // Spy on giveReferralReward method
-      const giveReferralRewardSpy = jest.spyOn(authService as any, 'giveReferralReward');
+      const giveReferralRewardSpy = jest.spyOn(
+        authService as any,
+        'giveReferralReward',
+      );
 
       // Act
       const result = await authService.verifyOtp({

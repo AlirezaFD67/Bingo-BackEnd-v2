@@ -15,14 +15,16 @@ export class GameRoomsService {
     private readonly gameRoomRepository: Repository<GameRoom>,
   ) {}
 
-  async createGameRoom(createGameRoomDto: CreateGameRoomDto): Promise<GameRoomResponseDto> {
+  async createGameRoom(
+    createGameRoomDto: CreateGameRoomDto,
+  ): Promise<GameRoomResponseDto> {
     const gameRoom = this.gameRoomRepository.create({
       ...createGameRoomDto,
       isActive: true, // به صورت پیش فرض فعال است
     });
 
     const savedGameRoom = await this.gameRoomRepository.save(gameRoom);
-    
+
     return {
       id: savedGameRoom.id,
       entryFee: savedGameRoom.entryFee,
@@ -34,7 +36,9 @@ export class GameRoomsService {
     };
   }
 
-  async getAllGameRooms(query: GetRoomsQueryDto): Promise<GameRoomResponseDto[]> {
+  async getAllGameRooms(
+    query: GetRoomsQueryDto,
+  ): Promise<GameRoomResponseDto[]> {
     const whereCondition: any = {};
 
     // اضافه کردن فیلتر isActive اگر ارسال شده باشد
@@ -49,10 +53,10 @@ export class GameRoomsService {
 
     const gameRooms = await this.gameRoomRepository.find({
       where: whereCondition,
-      order: { createdAt: 'DESC' },
+      order: { entryFee: 'ASC' }, // مرتب‌سازی بر اساس entryFee از کم به زیاد
     });
 
-    return gameRooms.map(room => ({
+    return gameRooms.map((room) => ({
       id: room.id,
       entryFee: room.entryFee,
       startTimer: room.startTimer,
@@ -65,7 +69,7 @@ export class GameRoomsService {
 
   async getGameRoomById(id: number): Promise<GameRoomResponseDto> {
     const gameRoom = await this.gameRoomRepository.findOne({ where: { id } });
-    
+
     if (!gameRoom) {
       throw new NotFoundException('اتاق بازی یافت نشد');
     }
@@ -81,9 +85,12 @@ export class GameRoomsService {
     };
   }
 
-  async updateGameRoom(id: number, updateGameRoomDto: UpdateGameRoomDto): Promise<GameRoomResponseDto> {
+  async updateGameRoom(
+    id: number,
+    updateGameRoomDto: UpdateGameRoomDto,
+  ): Promise<GameRoomResponseDto> {
     const gameRoom = await this.gameRoomRepository.findOne({ where: { id } });
-    
+
     if (!gameRoom) {
       throw new NotFoundException('اتاق بازی یافت نشد');
     }
@@ -92,7 +99,7 @@ export class GameRoomsService {
     Object.assign(gameRoom, updateGameRoomDto);
 
     const updatedGameRoom = await this.gameRoomRepository.save(gameRoom);
-    
+
     return {
       id: updatedGameRoom.id,
       entryFee: updatedGameRoom.entryFee,
@@ -104,9 +111,12 @@ export class GameRoomsService {
     };
   }
 
-  async updateRoomStatus(id: number, updateRoomStatusDto: UpdateRoomStatusDto): Promise<GameRoomResponseDto> {
+  async updateRoomStatus(
+    id: number,
+    updateRoomStatusDto: UpdateRoomStatusDto,
+  ): Promise<GameRoomResponseDto> {
     const gameRoom = await this.gameRoomRepository.findOne({ where: { id } });
-    
+
     if (!gameRoom) {
       throw new NotFoundException('اتاق بازی یافت نشد');
     }
@@ -115,7 +125,7 @@ export class GameRoomsService {
     gameRoom.isActive = updateRoomStatusDto.isActive;
 
     const updatedGameRoom = await this.gameRoomRepository.save(gameRoom);
-    
+
     return {
       id: updatedGameRoom.id,
       entryFee: updatedGameRoom.entryFee,
@@ -127,5 +137,3 @@ export class GameRoomsService {
     };
   }
 }
-
-

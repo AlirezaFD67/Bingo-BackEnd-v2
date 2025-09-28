@@ -21,15 +21,24 @@ export const ERROR_MESSAGES = {
   INVALID_FILE_TYPE: { error: 'Invalid file type', status: 415 },
   UPLOAD_FAILED: { error: 'Upload failed', status: 500 },
   TOO_MANY_REQUESTS: { error: 'Too many requests', status: 429 },
-  WHEEL_SPIN_LIMIT_EXCEEDED: { error: 'شما فقط یکبار در 24 ساعت می‌توانید گردونه بچرخانید', status: 400 },
+  WHEEL_SPIN_LIMIT_EXCEEDED: {
+    error: 'شما فقط یکبار در 24 ساعت می‌توانید گردونه بچرخانید',
+    status: 400,
+  },
   INVALID_WHEEL_PRIZE_AMOUNT: { error: 'مقدار جایزه نامعتبر است', status: 400 },
   GAME_ROOM_NOT_FOUND: { error: 'اتاق بازی یافت نشد', status: 404 },
   ACTIVE_ROOM_NOT_FOUND: { error: 'اتاق فعال یافت نشد', status: 404 },
   INVALID_ROOM_TYPE: { error: 'نوع اتاق نامعتبر است', status: 400 },
   INVALID_ENTRY_FEE: { error: 'هزینه ورود نامعتبر است', status: 400 },
   INVALID_START_TIMER: { error: 'تایمر شروع نامعتبر است', status: 400 },
-  INVALID_MIN_PLAYERS: { error: 'حداقل تعداد بازیکنان نامعتبر است', status: 400 },
-  INSUFFICIENT_WALLET_BALANCE: { error: 'موجودی کیف پول کافی نیست', status: 400 },
+  INVALID_MIN_PLAYERS: {
+    error: 'حداقل تعداد بازیکنان نامعتبر است',
+    status: 400,
+  },
+  INSUFFICIENT_WALLET_BALANCE: {
+    error: 'موجودی کیف پول کافی نیست',
+    status: 400,
+  },
   TRANSACTION_NOT_FOUND: { error: 'تراکنش یافت نشد', status: 404 },
   TRANSACTION_NOT_WITHDRAW: { error: 'این تراکنش برداشت نیست', status: 400 },
   TRANSACTION_NOT_PENDING: { error: 'تراکنش قابل تایید نیست', status: 400 },
@@ -37,11 +46,29 @@ export const ERROR_MESSAGES = {
   ROOM_NOT_PENDING: { error: 'Room is not pending', status: 400 },
   INVALID_USER: { error: 'Invalid user', status: 400 },
   SOCKET_CONNECTION_FAILED: { error: 'Socket connection failed', status: 500 },
-  SOCKET_ROOM_FETCH_FAILED: { error: 'Failed to fetch active room global', status: 500 },
-  INVALID_SOCKET_STATUS_FILTER: { error: 'Invalid status filter. Must be pending or started', status: 400 },
-  SOCKET_DRAWN_NUMBERS_FETCH_FAILED: { error: 'Failed to fetch drawn numbers', status: 500 },
+  SOCKET_ROOM_FETCH_FAILED: {
+    error: 'Failed to fetch active room global',
+    status: 500,
+  },
+  INVALID_SOCKET_STATUS_FILTER: {
+    error: 'Invalid status filter. Must be pending or started',
+    status: 400,
+  },
+  SOCKET_DRAWN_NUMBERS_FETCH_FAILED: {
+    error: 'Failed to fetch drawn numbers',
+    status: 500,
+  },
   INVALID_ACTIVE_ROOM_ID: { error: 'activeRoomId is required', status: 400 },
-  SOCKET_WINNERS_FETCH_FAILED: { error: 'Failed to fetch winners', status: 500 },
-  SOCKET_LINE_WINNER_CHECK_FAILED: { error: 'Failed to check line winners', status: 500 },
-  SOCKET_FULL_WINNER_CHECK_FAILED: { error: 'Failed to check full winners', status: 500 },
+  SOCKET_WINNERS_FETCH_FAILED: {
+    error: 'Failed to fetch winners',
+    status: 500,
+  },
+  SOCKET_LINE_WINNER_CHECK_FAILED: {
+    error: 'Failed to check line winners',
+    status: 500,
+  },
+  SOCKET_FULL_WINNER_CHECK_FAILED: {
+    error: 'Failed to check full winners',
+    status: 500,
+  },
 };

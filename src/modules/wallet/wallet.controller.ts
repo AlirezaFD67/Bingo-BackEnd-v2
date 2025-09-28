@@ -96,7 +96,8 @@ export class WalletController {
   @Get('transactions')
   @ApiOperation({
     summary: 'دریافت لیست تراکنش‌های کیف پول',
-    description: 'دریافت لیست تراکنش‌های کیف پول کاربر با قابلیت فیلتر بر اساس نوع، وضعیت و تعداد روزهای گذشته',
+    description:
+      'دریافت لیست تراکنش‌های کیف پول کاربر با قابلیت فیلتر بر اساس نوع، وضعیت و تعداد روزهای گذشته',
   })
   @ApiResponse({
     status: HttpStatus.OK,

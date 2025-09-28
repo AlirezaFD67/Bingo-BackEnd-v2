@@ -37,7 +37,8 @@ export class WheelController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'بررسی مجاز بودن چرخش گردونه',
-    description: 'بررسی می‌کند که آیا کاربر می‌تواند گردونه بچرخاند یا نه. هر کاربر فقط یکبار در 24 ساعت می‌تواند گردونه بچرخاند.',
+    description:
+      'بررسی می‌کند که آیا کاربر می‌تواند گردونه بچرخاند یا نه. هر کاربر فقط یکبار در 24 ساعت می‌تواند گردونه بچرخاند.',
   })
   @ApiResponse({
     status: 200,
@@ -68,7 +69,8 @@ export class WheelController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'چرخش گردونه و دریافت جایزه',
-    description: 'سیستم چرخش گردونه به کاربران امکان دریافت جایزه از طریق چرخش گردونه را می‌دهد. هر کاربر فقط یکبار در 24 ساعت می‌تواند گردونه بچرخاند.',
+    description:
+      'سیستم چرخش گردونه به کاربران امکان دریافت جایزه از طریق چرخش گردونه را می‌دهد. هر کاربر فقط یکبار در 24 ساعت می‌تواند گردونه بچرخاند.',
   })
   @ApiBody({
     type: SpinWheelDto,
@@ -86,7 +88,10 @@ export class WheelController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'string', example: 'شما فقط یکبار در 24 ساعت می‌توانید گردونه بچرخانید' },
+        message: {
+          type: 'string',
+          example: 'شما فقط یکبار در 24 ساعت می‌توانید گردونه بچرخانید',
+        },
       },
     },
   })

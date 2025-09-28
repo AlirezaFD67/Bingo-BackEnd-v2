@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
 import { RoomType } from '../enums/room-type.enum';
 
 @Entity('game_rooms')
@@ -24,5 +29,3 @@ export class GameRoom {
   @CreateDateColumn()
   createdAt: Date;
 }
-
-

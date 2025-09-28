@@ -36,7 +36,7 @@ describe('ReservationService - getRoomCards (T018)', () => {
     // Mock service with minimal dependencies
     service = {
       userReservedCardRepository: mockUserReservedCardRepository,
-      getRoomCards: async function(activeRoomId: number) {
+      getRoomCards: async function (activeRoomId: number) {
         const reservedCards = await this.userReservedCardRepository.find({
           where: { activeRoomId },
           relations: ['card', 'user'],
@@ -47,18 +47,21 @@ describe('ReservationService - getRoomCards (T018)', () => {
           matrix: reservedCard.card.matrix,
           owner: {
             userId: reservedCard.user.id,
-            username: reservedCard.user.username || `user_${reservedCard.user.id}`,
+            username:
+              reservedCard.user.username || `user_${reservedCard.user.id}`,
           },
           activeRoomId: reservedCard.activeRoomId,
           reservedAt: reservedCard.createdAt,
         }));
-      }
+      },
     };
   });
 
   describe('getRoomCards', () => {
     it('should return room cards with owner information', async () => {
-      mockUserReservedCardRepository.find.mockResolvedValue([mockUserReservedCard]);
+      mockUserReservedCardRepository.find.mockResolvedValue([
+        mockUserReservedCard,
+      ]);
 
       const result = await service.getRoomCards(1);
 
@@ -90,7 +93,9 @@ describe('ReservationService - getRoomCards (T018)', () => {
         user: userWithoutUsername,
       };
 
-      mockUserReservedCardRepository.find.mockResolvedValue([cardWithNullUsername]);
+      mockUserReservedCardRepository.find.mockResolvedValue([
+        cardWithNullUsername,
+      ]);
 
       const result = await service.getRoomCards(1);
 
@@ -140,7 +145,9 @@ describe('ReservationService - getRoomCards (T018)', () => {
     });
 
     it('should preserve matrix structure correctly', async () => {
-      mockUserReservedCardRepository.find.mockResolvedValue([mockUserReservedCard]);
+      mockUserReservedCardRepository.find.mockResolvedValue([
+        mockUserReservedCard,
+      ]);
 
       const result = await service.getRoomCards(1);
 

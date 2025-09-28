@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TransactionType, TransactionStatus } from '../../../enums/transaction-type.enum';
+import {
+  TransactionType,
+  TransactionStatus,
+} from '../../../enums/transaction-type.enum';
 
 export class WithdrawWalletResponseDto {
   @ApiProperty({

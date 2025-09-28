@@ -42,4 +42,3 @@ export class ActiveRoomWinner {
   @JoinColumn({ name: 'cardId' })
   card: Card;
 }
-

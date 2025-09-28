@@ -11,7 +11,10 @@ import { User } from '../../entities/user.entity';
 import { WalletTransaction } from '../../entities/wallet-transaction.entity';
 import { RoomType } from '../../enums/room-type.enum';
 import { RoomStatus } from '../../enums/room-status.enum';
-import { TransactionType, TransactionStatus } from '../../enums/transaction-type.enum';
+import {
+  TransactionType,
+  TransactionStatus,
+} from '../../enums/transaction-type.enum';
 
 @Injectable()
 export class AutoTimerService implements OnModuleInit {
@@ -79,7 +82,9 @@ export class AutoTimerService implements OnModuleInit {
       });
 
       if (existingActiveRoom) {
-        this.logger.log(`Active room already exists for game room ${gameRoom.id}`);
+        this.logger.log(
+          `Active room already exists for game room ${gameRoom.id}`,
+        );
         this.startTimer(existingActiveRoom);
         return existingActiveRoom;
       }
@@ -92,13 +97,18 @@ export class AutoTimerService implements OnModuleInit {
       });
 
       const savedActiveRoom = await this.activeRoomRepository.save(activeRoom);
-      this.logger.log(`Created active room ${savedActiveRoom.id} for game room ${gameRoom.id}`);
+      this.logger.log(
+        `Created active room ${savedActiveRoom.id} for game room ${gameRoom.id}`,
+      );
 
       // Start timer for this room
       this.startTimer(savedActiveRoom);
       return savedActiveRoom;
     } catch (error) {
-      this.logger.error(`Error creating active room for game room ${gameRoom.id}:`, error);
+      this.logger.error(
+        `Error creating active room for game room ${gameRoom.id}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -157,19 +167,27 @@ export class AutoTimerService implements OnModuleInit {
         await this.checkPlayerCountAndProceed(activeRoom, gameRoom);
       }
     } catch (error) {
-      this.logger.error(`Error processing timer tick for active room ${activeRoom.id}:`, error);
+      this.logger.error(
+        `Error processing timer tick for active room ${activeRoom.id}:`,
+        error,
+      );
     }
   }
 
   /**
    * Check player count and either start the game or reset timer
    */
-  private async checkPlayerCountAndProceed(activeRoom: ActiveRoomGlobal, gameRoom: GameRoom) {
+  private async checkPlayerCountAndProceed(
+    activeRoom: ActiveRoomGlobal,
+    gameRoom: GameRoom,
+  ) {
     try {
       // Count unique users who reserved cards for this active room
       const playerCount = await this.reservationRepository
         .createQueryBuilder('reservation')
-        .where('reservation.activeRoomId = :activeRoomId', { activeRoomId: activeRoom.id })
+        .where('reservation.activeRoomId = :activeRoomId', {
+          activeRoomId: activeRoom.id,
+        })
         .select('COUNT(DISTINCT reservation.userId)', 'count')
         .getRawOne();
 
@@ -187,7 +205,10 @@ export class AutoTimerService implements OnModuleInit {
         await this.resetTimer(activeRoom, gameRoom);
       }
     } catch (error) {
-      this.logger.error(`Error checking player count for active room ${activeRoom.id}:`, error);
+      this.logger.error(
+        `Error checking player count for active room ${activeRoom.id}:`,
+        error,
+      );
     }
   }
 
@@ -219,40 +240,109 @@ export class AutoTimerService implements OnModuleInit {
       setTimeout(() => {
         this.startNumberDrawing(activeRoom);
       }, 3000);
+
+      // ایجاد اتاق جدید pending برای همان gameRoomId
+      await this.createNewPendingRoom(activeRoom.gameRoomId);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(`Error starting game for active room ${activeRoom.id}:`, error);
+      this.logger.error(
+        `Error starting game for active room ${activeRoom.id}:`,
+        error,
+      );
     } finally {
       await queryRunner.release();
     }
   }
 
   /**
+   * Create a new pending room for the same gameRoomId after starting a game
+   */
+  private async createNewPendingRoom(gameRoomId: number) {
+    try {
+      // دریافت اطلاعات game room
+      const gameRoom = await this.gameRoomRepository.findOne({
+        where: { id: gameRoomId },
+      });
+
+      if (!gameRoom) {
+        this.logger.error(
+          `Game room ${gameRoomId} not found for creating new pending room`,
+        );
+        return;
+      }
+
+      // بررسی اینکه آیا اتاق pending برای این gameRoomId وجود دارد یا نه
+      const existingPendingRoom = await this.activeRoomRepository.findOne({
+        where: {
+          gameRoomId: gameRoomId,
+          status: RoomStatus.PENDING,
+        },
+      });
+
+      if (existingPendingRoom) {
+        this.logger.log(
+          `Pending room already exists for game room ${gameRoomId}, skipping creation`,
+        );
+        return;
+      }
+
+      // ایجاد اتاق جدید pending
+      const newActiveRoom = this.activeRoomRepository.create({
+        gameRoomId: gameRoomId,
+        remainingSeconds: gameRoom.startTimer,
+        status: RoomStatus.PENDING,
+      });
+
+      const savedActiveRoom =
+        await this.activeRoomRepository.save(newActiveRoom);
+      this.logger.log(
+        `Created new pending room ${savedActiveRoom.id} for game room ${gameRoomId}`,
+      );
+
+      // شروع تایمر برای اتاق جدید
+      this.startTimer(savedActiveRoom);
+    } catch (error) {
+      this.logger.error(
+        `Error creating new pending room for game room ${gameRoomId}:`,
+        error,
+      );
+    }
+  }
+
+  /**
    * پردازش تراکنش‌های خرید کارت برای کاربران (فقط برای روم‌های started)
    */
-  private async processCardPurchases(activeRoom: ActiveRoomGlobal, queryRunner: any) {
+  private async processCardPurchases(
+    activeRoom: ActiveRoomGlobal,
+    queryRunner: any,
+  ) {
     try {
       // دریافت تمام رزروهای مربوط به این اتاق که status آن‌ها PENDING است
       // چون فقط کارت‌های pending باید خریداری شوند
       const reservations = await queryRunner.manager.find(Reservation, {
-        where: { 
+        where: {
           activeRoomId: activeRoom.id,
-          status: 'pending' // فقط رزروهای pending
+          status: 'pending', // فقط رزروهای pending
         },
       });
 
       if (reservations.length === 0) {
-        this.logger.log(`No pending reservations found for active room ${activeRoom.id}`);
+        this.logger.log(
+          `No pending reservations found for active room ${activeRoom.id}`,
+        );
         return;
       }
 
       // گروه‌بندی رزروها بر اساس کاربر
       // هر کاربر یک تراکنش برای این activeRoomId خواهد داشت
       const userReservationsMap = new Map<number, number>();
-      
+
       for (const reservation of reservations) {
         const currentAmount = userReservationsMap.get(reservation.userId) || 0;
-        userReservationsMap.set(reservation.userId, currentAmount + Number(reservation.entryFee));
+        userReservationsMap.set(
+          reservation.userId,
+          currentAmount + Number(reservation.entryFee),
+        );
       }
 
       // پردازش تراکنش برای هر کاربر (یک تراکنش برای هر کاربر در این activeRoomId)
@@ -275,12 +365,19 @@ export class AutoTimerService implements OnModuleInit {
 
         await queryRunner.manager.save(WalletTransaction, transaction);
 
-        this.logger.log(`Processed card purchase for user ${userId} in active room ${activeRoom.id}: ${totalAmount} toman`);
+        this.logger.log(
+          `Processed card purchase for user ${userId} in active room ${activeRoom.id}: ${totalAmount} toman`,
+        );
       }
 
-      this.logger.log(`Card purchases processed for ${userReservationsMap.size} users in active room ${activeRoom.id}`);
+      this.logger.log(
+        `Card purchases processed for ${userReservationsMap.size} users in active room ${activeRoom.id}`,
+      );
     } catch (error) {
-      this.logger.error(`Error processing card purchases for active room ${activeRoom.id}:`, error);
+      this.logger.error(
+        `Error processing card purchases for active room ${activeRoom.id}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -294,29 +391,43 @@ export class AutoTimerService implements OnModuleInit {
       activeRoom.updatedAt = new Date();
       await this.activeRoomRepository.save(activeRoom);
 
-      this.logger.log(`Timer reset for active room ${activeRoom.id}, restarting countdown`);
+      this.logger.log(
+        `Timer reset for active room ${activeRoom.id}, restarting countdown`,
+      );
     } catch (error) {
-      this.logger.error(`Error resetting timer for active room ${activeRoom.id}:`, error);
+      this.logger.error(
+        `Error resetting timer for active room ${activeRoom.id}:`,
+        error,
+      );
     }
   }
 
   /**
    * توزیع کارت‌ها به کاربران بر اساس تعداد کارت‌های رزرو شده
    */
-  private async distributeCardsToUsers(activeRoom: ActiveRoomGlobal, queryRunner?: any) {
+  private async distributeCardsToUsers(
+    activeRoom: ActiveRoomGlobal,
+    queryRunner?: any,
+  ) {
     try {
       // دریافت تمام رزروهای مربوط به این اتاق
-      const reservations = queryRunner 
-        ? await queryRunner.manager.find(Reservation, { where: { activeRoomId: activeRoom.id } })
-        : await this.reservationRepository.find({ where: { activeRoomId: activeRoom.id } });
+      const reservations = queryRunner
+        ? await queryRunner.manager.find(Reservation, {
+            where: { activeRoomId: activeRoom.id },
+          })
+        : await this.reservationRepository.find({
+            where: { activeRoomId: activeRoom.id },
+          });
 
-      this.logger.log(`Distributing cards for ${reservations.length} reservations in active room ${activeRoom.id}`);
+      this.logger.log(
+        `Distributing cards for ${reservations.length} reservations in active room ${activeRoom.id}`,
+      );
 
       // دریافت تمام کارت‌های موجود
-      const allCards = queryRunner 
+      const allCards = queryRunner
         ? await queryRunner.manager.find(Card)
         : await this.cardRepository.find();
-      
+
       if (allCards.length === 0) {
         this.logger.warn('No cards available for distribution');
         return;
@@ -329,13 +440,16 @@ export class AutoTimerService implements OnModuleInit {
 
       // توزیع کارت‌ها به هر کاربر
       for (const reservation of reservations) {
-        const cardsToDistribute = Math.min(reservation.cardCount, shuffledCards.length - cardIndex);
-        
+        const cardsToDistribute = Math.min(
+          reservation.cardCount,
+          shuffledCards.length - cardIndex,
+        );
+
         for (let i = 0; i < cardsToDistribute; i++) {
           const card = shuffledCards[cardIndex + i];
-          
+
           // ایجاد رکورد user_reserved_cards
-          const userReservedCard = queryRunner 
+          const userReservedCard = queryRunner
             ? queryRunner.manager.create(UserReservedCard, {
                 userId: reservation.userId,
                 activeRoomId: activeRoom.id,
@@ -355,12 +469,19 @@ export class AutoTimerService implements OnModuleInit {
         }
 
         cardIndex += cardsToDistribute;
-        this.logger.log(`Distributed ${cardsToDistribute} cards to user ${reservation.userId}`);
+        this.logger.log(
+          `Distributed ${cardsToDistribute} cards to user ${reservation.userId}`,
+        );
       }
 
-      this.logger.log(`Card distribution completed for active room ${activeRoom.id}`);
+      this.logger.log(
+        `Card distribution completed for active room ${activeRoom.id}`,
+      );
     } catch (error) {
-      this.logger.error(`Error distributing cards for active room ${activeRoom.id}:`, error);
+      this.logger.error(
+        `Error distributing cards for active room ${activeRoom.id}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -370,7 +491,7 @@ export class AutoTimerService implements OnModuleInit {
    */
   private startNumberDrawing(activeRoom: ActiveRoomGlobal) {
     this.logger.log(`Starting number drawing for active room ${activeRoom.id}`);
-    
+
     // آرایه اعداد از 1 تا 90
     const availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
     const drawnNumbers: number[] = [];
@@ -385,7 +506,9 @@ export class AutoTimerService implements OnModuleInit {
         }
 
         // انتخاب عدد تصادفی از اعداد باقی‌مانده
-        const remainingNumbers = availableNumbers.filter(num => !drawnNumbers.includes(num));
+        const remainingNumbers = availableNumbers.filter(
+          (num) => !drawnNumbers.includes(num),
+        );
         const randomIndex = Math.floor(Math.random() * remainingNumbers.length);
         const drawnNumber = remainingNumbers[randomIndex];
 
@@ -398,9 +521,14 @@ export class AutoTimerService implements OnModuleInit {
         await this.drawnNumberRepository.save(drawnNumberEntity);
         drawnNumbers.push(drawnNumber);
 
-        this.logger.log(`Drew number ${drawnNumber} for active room ${activeRoom.id}`);
+        this.logger.log(
+          `Drew number ${drawnNumber} for active room ${activeRoom.id}`,
+        );
       } catch (error) {
-        this.logger.error(`Error drawing number for active room ${activeRoom.id}:`, error);
+        this.logger.error(
+          `Error drawing number for active room ${activeRoom.id}:`,
+          error,
+        );
         clearInterval(numberDrawingInterval);
       }
     }, 3000); // هر 3 ثانیه

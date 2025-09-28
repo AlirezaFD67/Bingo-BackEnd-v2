@@ -26,7 +26,9 @@ export class ActiveRoomsService {
     }
 
     // Convert Persian date (you might need to implement a proper Persian date converter)
-    const createdAtPersian = this.convertToPersianDate(activeRoom.gameRoom.createdAt);
+    const createdAtPersian = this.convertToPersianDate(
+      activeRoom.gameRoom.createdAt,
+    );
 
     return {
       id: activeRoom.id,
@@ -50,14 +52,24 @@ export class ActiveRoomsService {
     // Simple Persian date conversion - you might want to use a proper library like moment-jalaali
     // This is a basic implementation
     const persianMonths = [
-      'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
-      'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+      'فروردین',
+      'اردیبهشت',
+      'خرداد',
+      'تیر',
+      'مرداد',
+      'شهریور',
+      'مهر',
+      'آبان',
+      'آذر',
+      'دی',
+      'بهمن',
+      'اسفند',
     ];
-    
+
     const year = date.getFullYear() - 621; // Approximate conversion
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    
+
     return `${year}/${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`;
   }
 }

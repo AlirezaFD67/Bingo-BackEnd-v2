@@ -35,48 +35,60 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('activeRoomGlobalRequest')
-  async handleActiveRoomGlobalRequest(@MessageBody() data: { status?: 'pending' | 'started' }) {
+  async handleActiveRoomGlobalRequest(
+    @MessageBody() data: { status?: 'pending' | 'started' },
+  ) {
     try {
-      this.logger.log(`Received activeRoomGlobalRequest with filter: ${data?.status || 'all'}`);
-      
+      this.logger.log(
+        `Received activeRoomGlobalRequest with filter: ${data?.status || 'all'}`,
+      );
+
       const rooms = await this.roomsService.getPendingRooms();
-      
+
       // Apply status filter if provided
       let filteredRooms = rooms;
       if (data?.status) {
-        filteredRooms = rooms.filter(room => room.status === data.status);
+        filteredRooms = rooms.filter((room) => room.status === data.status);
       }
-      
+
       const response: PendingRoomsResponseDto = {
         rooms: filteredRooms,
       };
 
       // Send response back to the client
       this.server.emit('activeRoomGlobal', response);
-      
-      this.logger.log(`Sent ${filteredRooms.length} filtered rooms (status: ${data?.status || 'all'})`);
+
+      this.logger.log(
+        `Sent ${filteredRooms.length} filtered rooms (status: ${data?.status || 'all'})`,
+      );
     } catch (error) {
       this.logger.error('Error handling activeRoomGlobalRequest:', error);
-      this.server.emit('error', { message: 'Failed to fetch active room global' });
+      this.server.emit('error', {
+        message: 'Failed to fetch active room global',
+      });
     }
   }
 
   @SubscribeMessage('roomInfoRequest')
   async handleRoomInfoRequest(@MessageBody() data: { activeRoomId: number }) {
     try {
-      this.logger.log(`Received roomInfoRequest for activeRoomId: ${data.activeRoomId}`);
-      
+      this.logger.log(
+        `Received roomInfoRequest for activeRoomId: ${data.activeRoomId}`,
+      );
+
       if (!data.activeRoomId) {
         this.server.emit('error', { message: 'activeRoomId is required' });
         return;
       }
-      
+
       const roomInfo = await this.roomsService.getRoomInfo(data.activeRoomId);
-      
+
       // Send response back to the client
       this.server.emit('roomInfo', roomInfo);
-      
-      this.logger.log(`Sent room info for activeRoomId ${data.activeRoomId}: ${JSON.stringify(roomInfo)}`);
+
+      this.logger.log(
+        `Sent room info for activeRoomId ${data.activeRoomId}: ${JSON.stringify(roomInfo)}`,
+      );
     } catch (error) {
       this.logger.error('Error handling roomInfoRequest:', error);
       this.server.emit('error', { message: 'Failed to fetch room info' });
@@ -84,18 +96,25 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('numberDrawnRequest')
-  async handleNumberDrawnRequest(@MessageBody() data: { activeRoomId: number }) {
+  async handleNumberDrawnRequest(
+    @MessageBody() data: { activeRoomId: number },
+  ) {
     try {
-      this.logger.log(`Received numberDrawnRequest for activeRoomId: ${data?.activeRoomId}`);
+      this.logger.log(
+        `Received numberDrawnRequest for activeRoomId: ${data?.activeRoomId}`,
+      );
 
       if (!data?.activeRoomId) {
         this.server.emit('error', { message: 'activeRoomId is required' });
         return;
       }
 
-      const { drawnNumbers, total } = await this.roomsService.getDrawnNumbers(data.activeRoomId);
+      const { drawnNumbers, total } = await this.roomsService.getDrawnNumbers(
+        data.activeRoomId,
+      );
 
-      const lastNumber = drawnNumbers.length > 0 ? drawnNumbers[drawnNumbers.length - 1] : null;
+      const lastNumber =
+        drawnNumbers.length > 0 ? drawnNumbers[drawnNumbers.length - 1] : null;
 
       this.server.emit('numberDrawn', {
         namespace: '/rooms',
@@ -116,7 +135,9 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('winRequest')
   async handleWinRequest(@MessageBody() data: { activeRoomId: number }) {
     try {
-      this.logger.log(`Received winRequest for activeRoomId: ${data?.activeRoomId}`);
+      this.logger.log(
+        `Received winRequest for activeRoomId: ${data?.activeRoomId}`,
+      );
 
       if (!data?.activeRoomId) {
         this.server.emit('error', { message: 'activeRoomId is required' });
@@ -136,7 +157,9 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         },
       });
 
-      this.logger.log(`Sent winners for activeRoomId ${data.activeRoomId}: ${JSON.stringify(winners)}`);
+      this.logger.log(
+        `Sent winners for activeRoomId ${data.activeRoomId}: ${JSON.stringify(winners)}`,
+      );
     } catch (error) {
       this.logger.error('Error handling winRequest:', error);
       this.server.emit('error', { message: 'Failed to fetch winners' });

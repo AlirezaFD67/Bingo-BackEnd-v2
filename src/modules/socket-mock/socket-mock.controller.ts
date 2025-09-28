@@ -59,14 +59,15 @@ export class SocketMockController {
       ]
     }
     \`\`\`
-    `
+    `,
   })
   @ApiQuery({
     name: 'status',
     required: false,
     enum: ['pending', 'started'],
-    description: 'Filter rooms by status (pending | started). Leave empty to get all.',
-    example: 'pending'
+    description:
+      'Filter rooms by status (pending | started). Leave empty to get all.',
+    example: 'pending',
   })
   @ApiResponse({
     status: 200,
@@ -74,28 +75,30 @@ export class SocketMockController {
     type: PendingRoomsMockResponseDto,
   })
   async getPendingRooms(
-    @Query('status') status?: 'pending' | 'started'
+    @Query('status') status?: 'pending' | 'started',
   ): Promise<PendingRoomsMockResponseDto> {
     try {
       // Get real data from socket service
       const realRooms = await this.roomsService.getPendingRooms();
-      
+
       // Apply status filter if provided
       let filteredRooms = realRooms;
       if (status) {
-        filteredRooms = realRooms.filter(room => room.status === status);
+        filteredRooms = realRooms.filter((room) => room.status === status);
       }
-      
+
       return { rooms: filteredRooms };
     } catch (error) {
       // Fallback to mock data if real service fails
       const mockData = this.socketMockService.getMockPendingRooms();
-      
+
       // Apply status filter to mock data if provided
       if (status) {
-        mockData.rooms = mockData.rooms.filter(room => room.status === status);
+        mockData.rooms = mockData.rooms.filter(
+          (room) => room.status === status,
+        );
       }
-      
+
       return mockData;
     }
   }
@@ -139,22 +142,23 @@ export class SocketMockController {
       "playerCount": 5
     }
     \`\`\`
-    `
+    `,
   })
   @ApiQuery({
     name: 'activeRoomId',
     required: true,
     type: 'number',
     description: 'Active room ID to get information for',
-    example: 1
+    example: 1,
   })
   @ApiResponse({
     status: 200,
-    description: 'Room information including status, remaining seconds, available cards, and player count',
+    description:
+      'Room information including status, remaining seconds, available cards, and player count',
     type: RoomInfoResponseDto,
   })
   async getRoomInfo(
-    @Query('activeRoomId') activeRoomId: number
+    @Query('activeRoomId') activeRoomId: number,
   ): Promise<RoomInfoResponseDto> {
     try {
       // Get real data from socket service
@@ -219,14 +223,14 @@ export class SocketMockController {
       }
     }
     \`\`\`
-    `
+    `,
   })
   @ApiQuery({
     name: 'activeRoomId',
     required: true,
     type: 'number',
     description: 'Active room ID to get drawn numbers for',
-    example: 1
+    example: 1,
   })
   @ApiResponse({
     status: 200,
@@ -242,19 +246,17 @@ export class SocketMockController {
             activeRoomId: { type: 'number', example: 1 },
             number: { type: 'number', example: 42 },
             totalDrawnNumbers: { type: 'number', example: 17 },
-            drawnNumbers: { 
-              type: 'array', 
+            drawnNumbers: {
+              type: 'array',
               items: { type: 'number' },
-              example: [12, 45, 3, 78, 22]
-            }
-          }
-        }
-      }
-    }
+              example: [12, 45, 3, 78, 22],
+            },
+          },
+        },
+      },
+    },
   })
-  async getDrawnNumbers(
-    @Query('activeRoomId') activeRoomId: number
-  ): Promise<{
+  async getDrawnNumbers(@Query('activeRoomId') activeRoomId: number): Promise<{
     namespace: string;
     event: string;
     data: {
@@ -266,8 +268,10 @@ export class SocketMockController {
   }> {
     try {
       // Get real data from socket service
-      const { drawnNumbers, total } = await this.roomsService.getDrawnNumbers(activeRoomId);
-      const lastNumber = drawnNumbers.length > 0 ? drawnNumbers[drawnNumbers.length - 1] : null;
+      const { drawnNumbers, total } =
+        await this.roomsService.getDrawnNumbers(activeRoomId);
+      const lastNumber =
+        drawnNumbers.length > 0 ? drawnNumbers[drawnNumbers.length - 1] : null;
 
       return {
         namespace: '/rooms',
@@ -367,18 +371,19 @@ export class SocketMockController {
       }
     }
     \`\`\`
-    `
+    `,
   })
   @ApiQuery({
     name: 'activeRoomId',
     required: true,
     type: 'number',
     description: 'Active room ID to get winners for',
-    example: 1
+    example: 1,
   })
   @ApiResponse({
     status: 200,
-    description: 'Winners information including line winners, full winners, and game status',
+    description:
+      'Winners information including line winners, full winners, and game status',
     schema: {
       type: 'object',
       properties: {
@@ -395,9 +400,9 @@ export class SocketMockController {
                 properties: {
                   userId: { type: 'number', example: 123 },
                   cardId: { type: 'number', example: 456 },
-                  amount: { type: 'number', example: 50000 }
-                }
-              }
+                  amount: { type: 'number', example: 50000 },
+                },
+              },
             },
             fullWinners: {
               type: 'array',
@@ -406,19 +411,17 @@ export class SocketMockController {
                 properties: {
                   userId: { type: 'number', example: 789 },
                   cardId: { type: 'number', example: 654 },
-                  amount: { type: 'number', example: 150000 }
-                }
-              }
+                  amount: { type: 'number', example: 150000 },
+                },
+              },
             },
-            gameFinished: { type: 'boolean', example: true }
-          }
-        }
-      }
-    }
+            gameFinished: { type: 'boolean', example: true },
+          },
+        },
+      },
+    },
   })
-  async getWinners(
-    @Query('activeRoomId') activeRoomId: number
-  ): Promise<{
+  async getWinners(@Query('activeRoomId') activeRoomId: number): Promise<{
     namespace: string;
     event: string;
     data: {
@@ -468,5 +471,4 @@ export class SocketMockController {
       };
     }
   }
-
 }

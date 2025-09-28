@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PendingRoomsMockResponseDto, PendingRoomMockDto } from './dto/pending-rooms-mock.dto';
+import {
+  PendingRoomsMockResponseDto,
+  PendingRoomMockDto,
+} from './dto/pending-rooms-mock.dto';
 
 @Injectable()
 export class SocketMockService {

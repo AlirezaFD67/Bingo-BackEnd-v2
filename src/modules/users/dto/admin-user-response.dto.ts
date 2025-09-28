@@ -1,7 +1,11 @@
 import { Expose, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
-const formatBankCardNumber = ({ value }: { value: unknown }): string | undefined => {
+const formatBankCardNumber = ({
+  value,
+}: {
+  value: unknown;
+}): string | undefined => {
   if (typeof value === 'string' && value) {
     // Remove spaces to ensure it's always displayed without spaces
     return value.replace(/\s+/g, '');

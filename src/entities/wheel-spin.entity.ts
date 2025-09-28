@@ -20,7 +20,11 @@ export class WheelSpin {
   @Column({ type: 'integer', nullable: false })
   prizeAmount: number;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', nullable: false })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    nullable: false,
+  })
   lastSpinAt: Date;
 
   @CreateDateColumn()

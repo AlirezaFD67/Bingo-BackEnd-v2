@@ -35,7 +35,7 @@ export class ApiClientInterceptor implements NestInterceptor {
             duration: Date.now() - request.startTime,
           };
         }
-        
+
         // If data is an object, spread it
         return {
           ...data,

@@ -43,6 +43,8 @@ curl -X GET 'http://localhost:3006/api/admin/rooms?type=1&isActive=true' \
 }
 ```
 
+**نکته**: لیست اتاق‌ها بر اساس `entryFee` از کم به زیاد مرتب‌سازی می‌شود.
+
 ### 2. دریافت یک اتاق خاص
 
 **GET** `/api/admin/rooms/:id`

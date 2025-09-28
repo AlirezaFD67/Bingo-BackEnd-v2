@@ -12,7 +12,12 @@ import {
   ParseIntPipe,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { GameRoomsService } from './game-rooms.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -34,7 +39,8 @@ export class GameRoomsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'دریافت لیست اتاق‌های بازی',
-    description: 'لیست اتاق‌های بازی را با امکان فیلتر بر اساس وضعیت و نوع برمی‌گرداند (فقط برای ادمین‌ها)',
+    description:
+      'لیست اتاق‌های بازی را با امکان فیلتر بر اساس وضعیت و نوع برمی‌گرداند (فقط برای ادمین‌ها)',
   })
   @ApiResponse({
     status: 200,
@@ -49,9 +55,12 @@ export class GameRoomsController {
     // تبدیل string به boolean برای isActive
     const processedQuery: GetRoomsQueryDto = {
       type: query.type ? parseInt(query.type) : undefined,
-      isActive: query.isActive !== undefined ? query.isActive === 'true' || query.isActive === true : undefined,
+      isActive:
+        query.isActive !== undefined
+          ? query.isActive === 'true' || query.isActive === true
+          : undefined,
     };
-    
+
     return this.gameRoomsService.getAllGameRooms(processedQuery);
   }
 
@@ -86,7 +95,8 @@ export class GameRoomsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'ایجاد اتاق بازی جدید',
-    description: 'یک اتاق بازی جدید با تنظیمات مشخص ایجاد می‌کند (فقط برای ادمین‌ها)',
+    description:
+      'یک اتاق بازی جدید با تنظیمات مشخص ایجاد می‌کند (فقط برای ادمین‌ها)',
   })
   @ApiResponse({
     status: 201,
@@ -112,7 +122,8 @@ export class GameRoomsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'به‌روزرسانی اتاق بازی',
-    description: 'اطلاعات اتاق بازی مشخص را به‌روزرسانی می‌کند (فقط برای ادمین‌ها)',
+    description:
+      'اطلاعات اتاق بازی مشخص را به‌روزرسانی می‌کند (فقط برای ادمین‌ها)',
   })
   @ApiResponse({
     status: 200,
@@ -143,7 +154,8 @@ export class GameRoomsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'تغییر وضعیت اتاق بازی',
-    description: 'وضعیت فعال/غیرفعال اتاق بازی را تغییر می‌دهد (فقط برای ادمین‌ها)',
+    description:
+      'وضعیت فعال/غیرفعال اتاق بازی را تغییر می‌دهد (فقط برای ادمین‌ها)',
   })
   @ApiResponse({
     status: 200,

@@ -82,12 +82,22 @@ describe('AutoTimerService', () => {
     }).compile();
 
     service = module.get<AutoTimerService>(AutoTimerService);
-    gameRoomRepository = module.get<Repository<GameRoom>>(getRepositoryToken(GameRoom));
-    activeRoomRepository = module.get<Repository<ActiveRoomGlobal>>(getRepositoryToken(ActiveRoomGlobal));
-    reservationRepository = module.get<Repository<Reservation>>(getRepositoryToken(Reservation));
+    gameRoomRepository = module.get<Repository<GameRoom>>(
+      getRepositoryToken(GameRoom),
+    );
+    activeRoomRepository = module.get<Repository<ActiveRoomGlobal>>(
+      getRepositoryToken(ActiveRoomGlobal),
+    );
+    reservationRepository = module.get<Repository<Reservation>>(
+      getRepositoryToken(Reservation),
+    );
     cardRepository = module.get<Repository<Card>>(getRepositoryToken(Card));
-    userReservedCardRepository = module.get<Repository<UserReservedCard>>(getRepositoryToken(UserReservedCard));
-    drawnNumberRepository = module.get<Repository<DrawnNumber>>(getRepositoryToken(DrawnNumber));
+    userReservedCardRepository = module.get<Repository<UserReservedCard>>(
+      getRepositoryToken(UserReservedCard),
+    );
+    drawnNumberRepository = module.get<Repository<DrawnNumber>>(
+      getRepositoryToken(DrawnNumber),
+    );
   });
 
   afterEach(() => {
@@ -127,7 +137,9 @@ describe('AutoTimerService', () => {
       });
 
       // Mock the private methods
-      const initializeActiveRoomsSpy = jest.spyOn(service as any, 'initializeActiveRooms').mockResolvedValue(undefined);
+      const initializeActiveRoomsSpy = jest
+        .spyOn(service as any, 'initializeActiveRooms')
+        .mockResolvedValue(undefined);
 
       await service.onModuleInit();
 
@@ -160,7 +172,9 @@ describe('AutoTimerService', () => {
       });
 
       // Mock the private method
-      const startTimerSpy = jest.spyOn(service as any, 'startTimer').mockImplementation(() => {});
+      const startTimerSpy = jest
+        .spyOn(service as any, 'startTimer')
+        .mockImplementation(() => {});
 
       const result = await (service as any).createActiveRoom(mockGameRoom);
 
@@ -197,10 +211,14 @@ describe('AutoTimerService', () => {
         status: RoomStatus.PENDING,
       };
 
-      mockActiveRoomRepository.findOne.mockResolvedValue(mockExistingActiveRoom);
+      mockActiveRoomRepository.findOne.mockResolvedValue(
+        mockExistingActiveRoom,
+      );
 
       // Mock the private method
-      const startTimerSpy = jest.spyOn(service as any, 'startTimer').mockImplementation(() => {});
+      const startTimerSpy = jest
+        .spyOn(service as any, 'startTimer')
+        .mockImplementation(() => {});
 
       const result = await (service as any).createActiveRoom(mockGameRoom);
 
@@ -269,13 +287,15 @@ describe('AutoTimerService', () => {
       });
 
       // Mock the private method
-      const checkPlayerCountSpy = jest.spyOn(service as any, 'checkPlayerCountAndProceed').mockResolvedValue(undefined);
+      const checkPlayerCountSpy = jest
+        .spyOn(service as any, 'checkPlayerCountAndProceed')
+        .mockResolvedValue(undefined);
 
       await (service as any).processTimerTick(mockActiveRoom);
 
       expect(checkPlayerCountSpy).toHaveBeenCalledWith(
         { ...mockActiveRoom, remainingSeconds: 0 },
-        mockGameRoom
+        mockGameRoom,
       );
     });
   });
@@ -301,20 +321,27 @@ describe('AutoTimerService', () => {
         getRawOne: jest.fn().mockResolvedValue({ count: '3' }), // 3 players >= 2 minPlayers
       };
 
-      mockReservationRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockReservationRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
       mockActiveRoomRepository.save.mockResolvedValue({
         ...mockActiveRoom,
         status: RoomStatus.STARTED,
       });
 
       // Mock the private method
-      const startGameSpy = jest.spyOn(service as any, 'startGame').mockResolvedValue(undefined);
+      const startGameSpy = jest
+        .spyOn(service as any, 'startGame')
+        .mockResolvedValue(undefined);
 
-      await (service as any).checkPlayerCountAndProceed(mockActiveRoom, mockGameRoom);
+      await (service as any).checkPlayerCountAndProceed(
+        mockActiveRoom,
+        mockGameRoom,
+      );
 
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'reservation.activeRoomId = :activeRoomId',
-        { activeRoomId: 1 }
+        { activeRoomId: 1 },
       );
       expect(startGameSpy).toHaveBeenCalledWith(mockActiveRoom);
     });
@@ -339,16 +366,23 @@ describe('AutoTimerService', () => {
         getRawOne: jest.fn().mockResolvedValue({ count: '1' }), // 1 player < 2 minPlayers
       };
 
-      mockReservationRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockReservationRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
       mockActiveRoomRepository.save.mockResolvedValue({
         ...mockActiveRoom,
         startTime: 30,
       });
 
       // Mock the private method
-      const resetTimerSpy = jest.spyOn(service as any, 'resetTimer').mockResolvedValue(undefined);
+      const resetTimerSpy = jest
+        .spyOn(service as any, 'resetTimer')
+        .mockResolvedValue(undefined);
 
-      await (service as any).checkPlayerCountAndProceed(mockActiveRoom, mockGameRoom);
+      await (service as any).checkPlayerCountAndProceed(
+        mockActiveRoom,
+        mockGameRoom,
+      );
 
       expect(resetTimerSpy).toHaveBeenCalledWith(mockActiveRoom, mockGameRoom);
     });
@@ -370,7 +404,9 @@ describe('AutoTimerService', () => {
       });
 
       // Mock the private method
-      const stopTimerSpy = jest.spyOn(service as any, 'stopTimer').mockImplementation(() => {});
+      const stopTimerSpy = jest
+        .spyOn(service as any, 'stopTimer')
+        .mockImplementation(() => {});
 
       await (service as any).startGame(mockActiveRoom);
 
@@ -417,7 +453,10 @@ describe('AutoTimerService', () => {
     it('should clear all timers on module destroy', () => {
       // Mock timers map
       const mockTimer = setTimeout(() => {}, 1000);
-      (service as any).timers = new Map([[1, mockTimer], [2, mockTimer]]);
+      (service as any).timers = new Map([
+        [1, mockTimer],
+        [2, mockTimer],
+      ]);
 
       const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
 

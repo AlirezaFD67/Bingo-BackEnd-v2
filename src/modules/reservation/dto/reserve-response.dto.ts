@@ -14,7 +14,8 @@ export class ReserveResponseDto {
   walletBalance: number;
 
   @ApiProperty({
-    description: 'موجودی قابل استفاده (کم شده از کارت‌های رزرو شده در روم‌های pending)',
+    description:
+      'موجودی قابل استفاده (کم شده از کارت‌های رزرو شده در روم‌های pending)',
     example: 450000,
   })
   availableWalletBalance: number;

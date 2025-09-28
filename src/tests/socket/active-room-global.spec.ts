@@ -55,9 +55,15 @@ describe('ActiveRoomGlobalSocket', () => {
 
     gateway = module.get<RoomsGateway>(RoomsGateway);
     roomsService = module.get<RoomsService>(RoomsService);
-    activeRoomRepository = module.get<Repository<ActiveRoomGlobal>>(getRepositoryToken(ActiveRoomGlobal));
-    gameRoomRepository = module.get<Repository<GameRoom>>(getRepositoryToken(GameRoom));
-    reservationRepository = module.get<Repository<Reservation>>(getRepositoryToken(Reservation));
+    activeRoomRepository = module.get<Repository<ActiveRoomGlobal>>(
+      getRepositoryToken(ActiveRoomGlobal),
+    );
+    gameRoomRepository = module.get<Repository<GameRoom>>(
+      getRepositoryToken(GameRoom),
+    );
+    reservationRepository = module.get<Repository<Reservation>>(
+      getRepositoryToken(Reservation),
+    );
   });
 
   afterEach(() => {
@@ -86,7 +92,9 @@ describe('ActiveRoomGlobalSocket', () => {
 
       const logSpy = jest.spyOn(gateway['logger'], 'log');
       gateway.handleDisconnect(mockSocket);
-      expect(logSpy).toHaveBeenCalledWith('Client disconnected: test-socket-id');
+      expect(logSpy).toHaveBeenCalledWith(
+        'Client disconnected: test-socket-id',
+      );
     });
   });
 
@@ -134,9 +142,13 @@ describe('ActiveRoomGlobalSocket', () => {
     });
 
     it('should handle error when getting pending rooms', async () => {
-      mockActiveRoomRepository.find.mockRejectedValue(new Error('Database error'));
+      mockActiveRoomRepository.find.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      await expect(roomsService.getPendingRooms()).rejects.toThrow('Database error');
+      await expect(roomsService.getPendingRooms()).rejects.toThrow(
+        'Database error',
+      );
     });
 
     it('should get room info by activeRoomId', async () => {
@@ -156,8 +168,10 @@ describe('ActiveRoomGlobalSocket', () => {
       const mockPlayerCount = { count: '5' };
 
       mockActiveRoomRepository.findOne.mockResolvedValue(mockActiveRoom);
-      mockReservationRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-      
+      mockReservationRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
+
       // Mock for reserved cards query
       mockQueryBuilder.getRawOne
         .mockResolvedValueOnce(mockReservedCards) // First call for reserved cards
@@ -176,13 +190,19 @@ describe('ActiveRoomGlobalSocket', () => {
     it('should throw error when active room not found', async () => {
       mockActiveRoomRepository.findOne.mockResolvedValue(null);
 
-      await expect(roomsService.getRoomInfo(999)).rejects.toThrow('Active room with ID 999 not found');
+      await expect(roomsService.getRoomInfo(999)).rejects.toThrow(
+        'Active room with ID 999 not found',
+      );
     });
 
     it('should handle error when getting room info', async () => {
-      mockActiveRoomRepository.findOne.mockRejectedValue(new Error('Database error'));
+      mockActiveRoomRepository.findOne.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      await expect(roomsService.getRoomInfo(1)).rejects.toThrow('Database error');
+      await expect(roomsService.getRoomInfo(1)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -257,7 +277,9 @@ describe('ActiveRoomGlobalSocket', () => {
         emit: jest.fn(),
       } as any;
 
-      jest.spyOn(roomsService, 'getPendingRooms').mockRejectedValue(new Error('Service error'));
+      jest
+        .spyOn(roomsService, 'getPendingRooms')
+        .mockRejectedValue(new Error('Service error'));
 
       await gateway.handleActiveRoomGlobalRequest({});
 
@@ -282,7 +304,10 @@ describe('ActiveRoomGlobalSocket', () => {
 
       await gateway.handleRoomInfoRequest({ activeRoomId: 1 });
 
-      expect(gateway['server'].emit).toHaveBeenCalledWith('roomInfo', mockRoomInfo);
+      expect(gateway['server'].emit).toHaveBeenCalledWith(
+        'roomInfo',
+        mockRoomInfo,
+      );
     });
 
     it('should emit error when activeRoomId is missing', async () => {
@@ -302,7 +327,9 @@ describe('ActiveRoomGlobalSocket', () => {
         emit: jest.fn(),
       } as any;
 
-      jest.spyOn(roomsService, 'getRoomInfo').mockRejectedValue(new Error('Service error'));
+      jest
+        .spyOn(roomsService, 'getRoomInfo')
+        .mockRejectedValue(new Error('Service error'));
 
       await gateway.handleRoomInfoRequest({ activeRoomId: 1 });
 
