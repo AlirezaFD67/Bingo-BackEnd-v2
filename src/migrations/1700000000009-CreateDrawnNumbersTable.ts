@@ -3,6 +3,7 @@ import {
   QueryRunner,
   Table,
   TableForeignKey,
+  TableUnique,
 } from 'typeorm';
 
 export class CreateDrawnNumbersTable1700000000009
@@ -36,6 +37,12 @@ export class CreateDrawnNumbersTable1700000000009
             default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
+        ],
+        uniques: [
+          new TableUnique({
+            name: 'UQ_drawn_numbers_activeRoom_number',
+            columnNames: ['activeRoomId', 'number'],
+          }),
         ],
       }),
       true, // 🟢 اطمینان از عدم ایجاد دوباره جدول
