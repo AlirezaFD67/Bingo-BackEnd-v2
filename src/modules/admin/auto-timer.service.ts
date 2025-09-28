@@ -163,7 +163,14 @@ export class AutoTimerService implements OnModuleInit {
 
       // Check if timer reached zero
       if (activeRoom.remainingSeconds <= 0) {
-        // Timer reached zero, check player count
+        // Timer reached zero, change status to started first
+        activeRoom.status = RoomStatus.STARTED;
+        activeRoom.updatedAt = new Date();
+        await this.activeRoomRepository.save(activeRoom);
+        
+        this.logger.log(`Game started for active room ${activeRoom.id} - status changed to started`);
+        
+        // Then check player count and proceed
         await this.checkPlayerCountAndProceed(activeRoom, gameRoom);
       }
     } catch (error) {
@@ -198,10 +205,10 @@ export class AutoTimerService implements OnModuleInit {
       );
 
       if (uniquePlayerCount >= gameRoom.minPlayers) {
-        // Enough players, start the game
-        await this.startGame(activeRoom);
+        // Enough players, proceed with game logic
+        await this.proceedWithGame(activeRoom);
       } else {
-        // Not enough players, reset timer
+        // Not enough players, reset timer and status
         await this.resetTimer(activeRoom, gameRoom);
       }
     } catch (error) {
@@ -213,20 +220,20 @@ export class AutoTimerService implements OnModuleInit {
   }
 
   /**
-   * Start the game (change status to started)
+   * Proceed with game logic (status is already started)
    */
-  private async startGame(activeRoom: ActiveRoomGlobal) {
+  private async proceedWithGame(activeRoom: ActiveRoomGlobal) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      activeRoom.status = RoomStatus.STARTED;
+      // Status is already set to STARTED in processTimerTick
       activeRoom.updatedAt = new Date();
       await queryRunner.manager.save(ActiveRoomGlobal, activeRoom);
 
       this.stopTimer(activeRoom.id);
-      this.logger.log(`Game started for active room ${activeRoom.id}`);
+      this.logger.log(`Game proceeding for active room ${activeRoom.id}`);
 
       // پردازش تراکنش‌های خرید کارت
       await this.processCardPurchases(activeRoom, queryRunner);
@@ -388,11 +395,12 @@ export class AutoTimerService implements OnModuleInit {
   private async resetTimer(activeRoom: ActiveRoomGlobal, gameRoom: GameRoom) {
     try {
       activeRoom.remainingSeconds = gameRoom.startTimer; // Reset to original startTimer value
+      activeRoom.status = RoomStatus.PENDING; // Reset status to pending
       activeRoom.updatedAt = new Date();
       await this.activeRoomRepository.save(activeRoom);
 
       this.logger.log(
-        `Timer reset for active room ${activeRoom.id}, restarting countdown`,
+        `Timer reset for active room ${activeRoom.id}, status changed to pending, restarting countdown`,
       );
     } catch (error) {
       this.logger.error(
