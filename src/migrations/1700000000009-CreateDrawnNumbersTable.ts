@@ -3,6 +3,8 @@ import {
   QueryRunner,
   Table,
   TableForeignKey,
+  TableUnique,
+  Index,
 } from 'typeorm';
 
 export class CreateDrawnNumbersTable1700000000009
@@ -32,13 +34,24 @@ export class CreateDrawnNumbersTable1700000000009
           },
           {
             name: 'createdAt',
-            type: 'timestamp',
+            type: 'timestamp with time zone',
             default: 'CURRENT_TIMESTAMP',
             isNullable: false,
           },
         ],
+        uniques: [
+          new TableUnique({
+            name: 'UQ_drawn_numbers_activeRoom_number',
+            columnNames: ['activeRoomId', 'number'],
+          }),
+        ],
       }),
       true, // 🟢 اطمینان از عدم ایجاد دوباره جدول
+    );
+
+    // Create index on activeRoomId for better query performance
+    await queryRunner.query(
+      'CREATE INDEX IDX_drawn_numbers_activeRoomId ON drawn_numbers (activeRoomId)',
     );
 
     await queryRunner.createForeignKey(
@@ -55,6 +68,11 @@ export class CreateDrawnNumbersTable1700000000009
   public async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('drawn_numbers');
     if (table) {
+      // Drop index first
+      await queryRunner.query(
+        'DROP INDEX IF EXISTS IDX_drawn_numbers_activeRoomId',
+      );
+
       const foreignKey = table.foreignKeys.find(
         (fk) => fk.columnNames.indexOf('activeRoomId') !== -1,
       );

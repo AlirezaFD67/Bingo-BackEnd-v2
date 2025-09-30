@@ -15,23 +15,18 @@ export class CardTransactionService {
    * محاسبه مبلغ کارت‌های رزرو شده برای یک کاربر در روم‌های pending
    */
   async calculateUserReservedCardsAmount(userId: number): Promise<number> {
-    const reservations = await this.reservationRepository
+    // استفاده از queryBuilder برای محاسبه مستقیم مجموع
+    const result = await this.reservationRepository
       .createQueryBuilder('r')
       .leftJoin('r.activeRoom', 'ar')
       .where('r.userId = :userId', { userId })
       .andWhere('ar.status = :status', { status: RoomStatus.PENDING })
-      .andWhere('r.status = :reservationStatus', { reservationStatus: 'pending' })
-      .select(['r.id', 'r.cardCount', 'r.entryFee', 'ar.id'])
-      .getMany();
+      .andWhere('r.status = :reservationStatus', {
+        reservationStatus: 'pending',
+      })
+      .select('SUM(r.cardCount * r.entryFee)', 'totalAmount')
+      .getRawOne();
 
-    let totalAmount = 0;
-
-    reservations.forEach((reservation) => {
-      // محاسبه مبلغ کل برای این رزرو: تعداد کارت × هزینه ورودی
-      const reservationTotal = reservation.cardCount * Number(reservation.entryFee);
-      totalAmount += reservationTotal;
-    });
-
-    return totalAmount;
+    return Number(result.totalAmount) || 0;
   }
 }

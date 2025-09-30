@@ -252,7 +252,7 @@ describe('AutoTimerService', () => {
       mockGameRoomRepository.findOne.mockResolvedValue(mockGameRoom);
       mockActiveRoomRepository.save.mockResolvedValue({
         ...mockActiveRoom,
-        startTime: 29,
+        remainingSeconds: 29,
       });
 
       await (service as any).processTimerTick(mockActiveRoom);
@@ -262,15 +262,15 @@ describe('AutoTimerService', () => {
       });
       expect(mockActiveRoomRepository.save).toHaveBeenCalledWith({
         ...mockActiveRoom,
-        startTime: 29,
+        remainingSeconds: 29,
       });
     });
 
-    it('should check player count when timer reaches zero', async () => {
+    it('should change status to STARTED when timer reaches zero', async () => {
       const mockActiveRoom = {
         id: 1,
         gameRoomId: 1,
-        startTime: 1, // Will reach zero after decrement
+        remainingSeconds: 1, // Will reach zero after decrement
         status: RoomStatus.PENDING,
       };
 
@@ -281,10 +281,16 @@ describe('AutoTimerService', () => {
       };
 
       mockGameRoomRepository.findOne.mockResolvedValue(mockGameRoom);
-      mockActiveRoomRepository.save.mockResolvedValue({
-        ...mockActiveRoom,
-        remainingSeconds: 0,
-      });
+      mockActiveRoomRepository.save
+        .mockResolvedValueOnce({
+          ...mockActiveRoom,
+          remainingSeconds: 0,
+        })
+        .mockResolvedValueOnce({
+          ...mockActiveRoom,
+          remainingSeconds: 0,
+          status: RoomStatus.STARTED,
+        });
 
       // Mock the private method
       const checkPlayerCountSpy = jest
@@ -293,20 +299,27 @@ describe('AutoTimerService', () => {
 
       await (service as any).processTimerTick(mockActiveRoom);
 
+      expect(mockActiveRoomRepository.save).toHaveBeenCalledTimes(2);
+      expect(mockActiveRoomRepository.save).toHaveBeenNthCalledWith(2, {
+        ...mockActiveRoom,
+        remainingSeconds: 0,
+        status: RoomStatus.STARTED,
+        updatedAt: expect.any(Date),
+      });
       expect(checkPlayerCountSpy).toHaveBeenCalledWith(
-        { ...mockActiveRoom, remainingSeconds: 0 },
+        { ...mockActiveRoom, remainingSeconds: 0, status: RoomStatus.STARTED },
         mockGameRoom,
       );
     });
   });
 
   describe('checkPlayerCountAndProceed', () => {
-    it('should start game when enough players are present', async () => {
+    it('should proceed with game when enough players are present', async () => {
       const mockActiveRoom = {
         id: 1,
         gameRoomId: 1,
-        startTime: 0,
-        status: RoomStatus.PENDING,
+        remainingSeconds: 0,
+        status: RoomStatus.STARTED, // Status is already STARTED
       };
 
       const mockGameRoom = {
@@ -324,14 +337,10 @@ describe('AutoTimerService', () => {
       mockReservationRepository.createQueryBuilder.mockReturnValue(
         mockQueryBuilder,
       );
-      mockActiveRoomRepository.save.mockResolvedValue({
-        ...mockActiveRoom,
-        status: RoomStatus.STARTED,
-      });
 
       // Mock the private method
-      const startGameSpy = jest
-        .spyOn(service as any, 'startGame')
+      const proceedWithGameSpy = jest
+        .spyOn(service as any, 'proceedWithGame')
         .mockResolvedValue(undefined);
 
       await (service as any).checkPlayerCountAndProceed(
@@ -343,15 +352,15 @@ describe('AutoTimerService', () => {
         'reservation.activeRoomId = :activeRoomId',
         { activeRoomId: 1 },
       );
-      expect(startGameSpy).toHaveBeenCalledWith(mockActiveRoom);
+      expect(proceedWithGameSpy).toHaveBeenCalledWith(mockActiveRoom);
     });
 
     it('should reset timer when not enough players', async () => {
       const mockActiveRoom = {
         id: 1,
         gameRoomId: 1,
-        startTime: 0,
-        status: RoomStatus.PENDING,
+        remainingSeconds: 0,
+        status: RoomStatus.STARTED, // Status is already STARTED
       };
 
       const mockGameRoom = {
@@ -369,10 +378,6 @@ describe('AutoTimerService', () => {
       mockReservationRepository.createQueryBuilder.mockReturnValue(
         mockQueryBuilder,
       );
-      mockActiveRoomRepository.save.mockResolvedValue({
-        ...mockActiveRoom,
-        startTime: 30,
-      });
 
       // Mock the private method
       const resetTimerSpy = jest
@@ -388,44 +393,33 @@ describe('AutoTimerService', () => {
     });
   });
 
-  describe('startGame', () => {
-    it('should update status to started and stop timer', async () => {
+  describe('proceedWithGame', () => {
+    it('should proceed with game logic and stop timer', async () => {
       const mockActiveRoom = {
         id: 1,
         gameRoomId: 1,
-        startTime: 0,
-        status: RoomStatus.PENDING,
+        remainingSeconds: 0,
+        status: RoomStatus.STARTED, // Status is already STARTED
       };
-
-      mockActiveRoomRepository.save.mockResolvedValue({
-        ...mockActiveRoom,
-        status: RoomStatus.STARTED,
-        updatedAt: new Date(),
-      });
 
       // Mock the private method
       const stopTimerSpy = jest
         .spyOn(service as any, 'stopTimer')
         .mockImplementation(() => {});
 
-      await (service as any).startGame(mockActiveRoom);
+      await (service as any).proceedWithGame(mockActiveRoom);
 
-      expect(mockActiveRoomRepository.save).toHaveBeenCalledWith({
-        ...mockActiveRoom,
-        status: RoomStatus.STARTED,
-        updatedAt: expect.any(Date),
-      });
       expect(stopTimerSpy).toHaveBeenCalledWith(1);
     });
   });
 
   describe('resetTimer', () => {
-    it('should reset startTime to gameRoom startTimer', async () => {
+    it('should reset remainingSeconds and status to PENDING', async () => {
       const mockActiveRoom = {
         id: 1,
         gameRoomId: 1,
-        startTime: 0,
-        status: RoomStatus.PENDING,
+        remainingSeconds: 0,
+        status: RoomStatus.STARTED,
       };
 
       const mockGameRoom = {
@@ -435,7 +429,8 @@ describe('AutoTimerService', () => {
 
       mockActiveRoomRepository.save.mockResolvedValue({
         ...mockActiveRoom,
-        startTime: 30,
+        remainingSeconds: 30,
+        status: RoomStatus.PENDING,
         updatedAt: new Date(),
       });
 
@@ -443,7 +438,8 @@ describe('AutoTimerService', () => {
 
       expect(mockActiveRoomRepository.save).toHaveBeenCalledWith({
         ...mockActiveRoom,
-        startTime: 30,
+        remainingSeconds: 30,
+        status: RoomStatus.PENDING,
         updatedAt: expect.any(Date),
       });
     });

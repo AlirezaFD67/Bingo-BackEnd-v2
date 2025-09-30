@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { WalletService } from '../modules/wallet/wallet.service';
-import { WalletTransaction } from '../entities/wallet-transaction.entity';
-import { User } from '../entities/user.entity';
+import { WalletService } from './wallet.service';
+import { WalletTransaction } from '../../entities/wallet-transaction.entity';
+import { User } from '../../entities/user.entity';
 import {
   TransactionType,
   TransactionStatus,
-} from '../enums/transaction-type.enum';
-import { GetWalletTransactionsDto } from '../modules/wallet/dto/get-wallet-transactions.dto';
-import { WalletTransactionResponseDto } from '../modules/wallet/dto/wallet-transaction-response.dto';
+} from '../../enums/transaction-type.enum';
+import { GetWalletTransactionsDto } from './dto/get-wallet-transactions.dto';
+import { WalletTransactionResponseDto } from './dto/wallet-transaction-response.dto';
 
 describe('WalletService', () => {
   let service: WalletService;
@@ -50,9 +50,7 @@ describe('WalletService', () => {
     walletTransactionRepository = module.get<Repository<WalletTransaction>>(
       getRepositoryToken(WalletTransaction),
     );
-    userRepository = module.get<Repository<User>>(
-      getRepositoryToken(User),
-    );
+    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
   it('should be defined', () => {
@@ -127,8 +125,14 @@ describe('WalletService', () => {
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         where: { id: 123 },
       });
-      expect(queryBuilder.where).toHaveBeenCalledWith('transaction.userId = :userId', { userId: 123 });
-      expect(queryBuilder.orderBy).toHaveBeenCalledWith('transaction.createdAt', 'DESC');
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'transaction.userId = :userId',
+        { userId: 123 },
+      );
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+        'transaction.createdAt',
+        'DESC',
+      );
       expect(queryBuilder.skip).toHaveBeenCalledWith(0);
       expect(queryBuilder.take).toHaveBeenCalledWith(20);
     });

@@ -33,6 +33,15 @@ export class RoomsService {
     private activeRoomWinnerRepository: Repository<ActiveRoomWinner>,
   ) {}
 
+  /** Helper functions */
+  private isLineComplete(matrix: number[][], drawnNumbers: number[]): boolean {
+    return matrix.some((row) => row.every((num) => drawnNumbers.includes(num)));
+  }
+
+  private isCardComplete(matrix: number[][], drawnNumbers: number[]): boolean {
+    return matrix.flat().every((num) => drawnNumbers.includes(num));
+  }
+
   async getPendingRooms(): Promise<PendingRoomDto[]> {
     try {
       // Get all active rooms with pending or started status
@@ -87,27 +96,22 @@ export class RoomsService {
         throw new Error(`Active room with ID ${activeRoomId} not found`);
       }
 
-      // Count total reserved cards for this active room
-      const reservedCardsResult = await this.reservationRepository
-        .createQueryBuilder('reservation')
-        .where('reservation.activeRoomId = :activeRoomId', {
-          activeRoomId: activeRoomId,
-        })
-        .select('SUM(reservation.cardCount)', 'totalCards')
-        .getRawOne();
+      // Count total reserved cards and unique players in parallel
+      const [reservedCardsResult, playerCountResult] = await Promise.all([
+        this.reservationRepository
+          .createQueryBuilder('reservation')
+          .where('reservation.activeRoomId = :activeRoomId', { activeRoomId })
+          .select('SUM(reservation.cardCount)', 'totalCards')
+          .getRawOne(),
+        this.reservationRepository
+          .createQueryBuilder('reservation')
+          .where('reservation.activeRoomId = :activeRoomId', { activeRoomId })
+          .select('COUNT(DISTINCT reservation.userId)', 'count')
+          .getRawOne(),
+      ]);
 
       const reservedCards = parseInt(reservedCardsResult?.totalCards || '0');
       const availableCards = 30 - reservedCards; // 30 is the maximum cards per room
-
-      // Count unique players for this active room
-      const playerCountResult = await this.reservationRepository
-        .createQueryBuilder('reservation')
-        .where('reservation.activeRoomId = :activeRoomId', {
-          activeRoomId: activeRoomId,
-        })
-        .select('COUNT(DISTINCT reservation.userId)', 'count')
-        .getRawOne();
-
       const playerCount = parseInt(playerCountResult?.count || '0');
 
       const result: RoomInfoResponseDto = {
@@ -133,6 +137,11 @@ export class RoomsService {
   async getDrawnNumbers(
     activeRoomId: number,
   ): Promise<{ drawnNumbers: number[]; total: number }> {
+    // Validation: Check if activeRoomId is valid
+    if (!activeRoomId || activeRoomId <= 0 || !Number.isInteger(activeRoomId)) {
+      throw new Error('activeRoomId must be a positive integer');
+    }
+
     // Fetch all drawn numbers for the room ordered by createdAt ASC
     const rows = await this.drawnNumberRepository.find({
       where: { activeRoomId },
@@ -163,60 +172,50 @@ export class RoomsService {
         return true; // Line checking should stop
       }
 
-      // Get all drawn numbers for this room
-      const drawnNumbers = await this.drawnNumberRepository.find({
-        where: { activeRoomId },
-        order: { createdAt: 'ASC' },
-        select: ['number'],
-      });
+      // Get drawn numbers and reserved cards in parallel
+      const [drawnNumbers, reservedCards] = await Promise.all([
+        this.drawnNumberRepository.find({
+          where: { activeRoomId },
+          order: { createdAt: 'ASC' },
+          select: ['number'],
+        }),
+        this.userReservedCardRepository.find({
+          where: { activeRoomId },
+          relations: ['card'],
+        }),
+      ]);
+
       const drawnNumbersList = drawnNumbers.map((dn) => dn.number);
-
-      // Get all reserved cards for this room
-      const reservedCards = await this.userReservedCardRepository.find({
-        where: { activeRoomId },
-        relations: ['card'],
-      });
-
       const lineWinners: Array<{ userId: number; cardId: number }> = [];
 
       for (const reservedCard of reservedCards) {
-        const card = reservedCard.card;
-        const matrix = card.matrix;
-
-        // Check each line (row) of the card
-        for (let row = 0; row < matrix.length; row++) {
-          const lineNumbers = matrix[row];
-          const isLineComplete = lineNumbers.every((num) =>
-            drawnNumbersList.includes(num),
+        if (this.isLineComplete(reservedCard.card.matrix, drawnNumbersList)) {
+          // Check if this user already has a line winner
+          const userAlreadyWon = lineWinners.some(
+            (winner) => winner.userId === reservedCard.userId,
           );
 
-          if (isLineComplete) {
-            // Check if this user already has a line winner
-            const userAlreadyWon = lineWinners.some(
-              (winner) => winner.userId === reservedCard.userId,
-            );
-
-            if (!userAlreadyWon) {
-              lineWinners.push({
-                userId: reservedCard.userId,
-                cardId: reservedCard.cardId,
-              });
-            }
-            break; // User can only win once per card
+          if (!userAlreadyWon) {
+            lineWinners.push({
+              userId: reservedCard.userId,
+              cardId: reservedCard.cardId,
+            });
           }
         }
       }
 
       // Save line winners to database
       if (lineWinners.length > 0) {
-        for (const winner of lineWinners) {
-          await this.activeRoomWinnerRepository.save({
-            activeRoomId,
-            userId: winner.userId,
-            cardId: winner.cardId,
-            winType: 'line',
-          });
-        }
+        await Promise.all(
+          lineWinners.map((winner) =>
+            this.activeRoomWinnerRepository.save({
+              activeRoomId,
+              userId: winner.userId,
+              cardId: winner.cardId,
+              winType: 'line',
+            }),
+          ),
+        );
 
         this.logger.log(
           `Found ${lineWinners.length} line winners for activeRoomId: ${activeRoomId}`,
@@ -240,33 +239,24 @@ export class RoomsService {
    */
   async checkFullWinners(activeRoomId: number): Promise<boolean> {
     try {
-      // Get all drawn numbers for this room
-      const drawnNumbers = await this.drawnNumberRepository.find({
-        where: { activeRoomId },
-        order: { createdAt: 'ASC' },
-        select: ['number'],
-      });
+      // Get drawn numbers and reserved cards in parallel
+      const [drawnNumbers, reservedCards] = await Promise.all([
+        this.drawnNumberRepository.find({
+          where: { activeRoomId },
+          order: { createdAt: 'ASC' },
+          select: ['number'],
+        }),
+        this.userReservedCardRepository.find({
+          where: { activeRoomId },
+          relations: ['card'],
+        }),
+      ]);
+
       const drawnNumbersList = drawnNumbers.map((dn) => dn.number);
-
-      // Get all reserved cards for this room
-      const reservedCards = await this.userReservedCardRepository.find({
-        where: { activeRoomId },
-        relations: ['card'],
-      });
-
       const fullWinners: Array<{ userId: number; cardId: number }> = [];
 
       for (const reservedCard of reservedCards) {
-        const card = reservedCard.card;
-        const matrix = card.matrix;
-
-        // Check if all numbers in the card are drawn
-        const allCardNumbers = matrix.flat();
-        const isCardComplete = allCardNumbers.every((num) =>
-          drawnNumbersList.includes(num),
-        );
-
-        if (isCardComplete) {
+        if (this.isCardComplete(reservedCard.card.matrix, drawnNumbersList)) {
           // Check if this user already has a full winner
           const userAlreadyWon = fullWinners.some(
             (winner) => winner.userId === reservedCard.userId,
@@ -283,14 +273,16 @@ export class RoomsService {
 
       // Save full winners to database
       if (fullWinners.length > 0) {
-        for (const winner of fullWinners) {
-          await this.activeRoomWinnerRepository.save({
-            activeRoomId,
-            userId: winner.userId,
-            cardId: winner.cardId,
-            winType: 'full',
-          });
-        }
+        await Promise.all(
+          fullWinners.map((winner) =>
+            this.activeRoomWinnerRepository.save({
+              activeRoomId,
+              userId: winner.userId,
+              cardId: winner.cardId,
+              winType: 'full',
+            }),
+          ),
+        );
 
         // Mark the room as finished
         await this.activeRoomRepository.update(

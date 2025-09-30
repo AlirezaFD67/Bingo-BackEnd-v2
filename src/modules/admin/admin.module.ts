@@ -6,6 +6,7 @@ import { AdminController } from './admin.controller';
 import { GameRoomsController } from './game-rooms.controller';
 import { SettingsController } from './settings.controller';
 import { WalletController } from './wallet.controller';
+import { MonitoringController } from './monitoring.controller';
 import { UsersService } from '../users/users.service';
 import { GameRoomsService } from './game-rooms.service';
 import { SettingsService } from './settings.service';
@@ -49,6 +50,7 @@ import { WalletModule } from '../wallet/wallet.module';
     GameRoomsController,
     SettingsController,
     WalletController,
+    MonitoringController,
   ],
   providers: [
     UsersService,

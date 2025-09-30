@@ -38,7 +38,7 @@ export class WalletService {
     }
 
     const transactions = await queryBuilder.getMany();
-    
+
     // تبدیل به DTO
     return transactions.map((transaction) => ({
       id: transaction.id,
