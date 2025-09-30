@@ -16,13 +16,42 @@ import {
   TransactionStatus,
 } from '../../enums/transaction-type.enum';
 
+/**
+ * Interface برای State مدیریت روم در حافظه
+ */
+interface RoomState {
+  activeRoomId: number;
+  gameRoomId: number;
+  status: RoomStatus;
+  remainingSeconds: number;
+  // برای Number Drawing
+  drawnNumbers: Set<number>;
+  remainingNumbers: number[];
+  lastDrawTime: number; // timestamp آخرین عدد کشیده شده
+  drawInterval: number; // فاصله زمانی بین اعداد (میلی‌ثانیه)
+  // برای Monitoring
+  lastSyncTime: number;
+  errorCount: number;
+  lastError?: string;
+}
+
 @Injectable()
 export class AutoTimerService implements OnModuleInit {
   private readonly logger = new Logger(AutoTimerService.name);
-  private timers: Map<number, NodeJS.Timeout> = new Map();
-  private sequentialDrawingRooms: Set<number> = new Set();
-  private cancelledRooms: Set<number> = new Set();
-  private roomTimeouts: Map<number, NodeJS.Timeout> = new Map();
+  
+  // State Management در حافظه
+  private roomStates: Map<number, RoomState> = new Map();
+  
+  // Loop اصلی - فقط یک تایمر برای همه روم‌ها
+  private mainLoopInterval: NodeJS.Timeout | null = null;
+  private readonly MAIN_LOOP_INTERVAL = 1000; // هر 1 ثانیه
+  
+  // Sync با دیتابیس
+  private syncInterval: NodeJS.Timeout | null = null;
+  private readonly SYNC_INTERVAL = 5000; // هر 5 ثانیه
+  
+  // Number Drawing
+  private readonly NUMBER_DRAW_INTERVAL = 3000; // هر 3 ثانیه
 
   constructor(
     @InjectRepository(GameRoom)
@@ -53,162 +82,220 @@ export class AutoTimerService implements OnModuleInit {
     // بازیابی روم‌های فعال بعد از restart
     await this.recoverActiveRooms();
     
-    // شروع تایمرهای جدید
-    await this.initializeActiveRooms();
+    // ایجاد روم‌های pending برای game room های فعال
+    await this.ensurePendingRooms();
+    
+    // شروع Loop اصلی
+    this.startMainLoop();
+    
+    // شروع Sync دوره‌ای با دیتابیس
+    this.startSyncLoop();
   }
 
   /**
-   * Initialize active rooms for all active GLOBAL rooms on startup
+   * شروع Loop اصلی - یک تایمر برای همه روم‌ها
    */
-  private async initializeActiveRooms() {
-    try {
-      const activeGlobalRooms = await this.gameRoomRepository.find({
-        where: {
-          isActive: true,
-          type: RoomType.GLOBAL,
-        },
-      });
+  private startMainLoop() {
+    if (this.mainLoopInterval) {
+      clearInterval(this.mainLoopInterval);
+    }
 
-      this.logger.log(`Found ${activeGlobalRooms.length} active GLOBAL rooms`);
+    this.mainLoopInterval = setInterval(() => {
+      this.processMainLoop();
+    }, this.MAIN_LOOP_INTERVAL);
 
-      for (const room of activeGlobalRooms) {
-        await this.createActiveRoom(room);
+    this.logger.log('Main loop started');
+  }
+
+  /**
+   * Loop اصلی - پردازش همه روم‌ها
+   */
+  private async processMainLoop() {
+    const now = Date.now();
+
+    for (const [activeRoomId, roomState] of this.roomStates.entries()) {
+      try {
+        // پردازش تایمر روم
+        if (roomState.status === RoomStatus.PENDING) {
+          await this.processRoomTimer(roomState);
+        }
+        
+        // پردازش Number Drawing
+        if (roomState.status === RoomStatus.STARTED) {
+          await this.processNumberDrawing(roomState, now);
       }
     } catch (error) {
-      this.logger.error('Error initializing active rooms:', error);
+        this.handleRoomError(roomState, error);
+      }
     }
   }
 
   /**
-   * Create a new active room entry and start its timer
+   * پردازش تایمر یک روم
    */
-  private async createActiveRoom(gameRoom: GameRoom) {
+  private async processRoomTimer(roomState: RoomState) {
+    roomState.remainingSeconds -= 1;
+
+    if (roomState.remainingSeconds <= 0) {
+      await this.handleTimerExpired(roomState);
+    }
+  }
+
+  /**
+   * پردازش Number Drawing برای یک روم
+   */
+  private async processNumberDrawing(roomState: RoomState, now: number) {
+    // بررسی اینکه آیا زمان کشیدن عدد جدید رسیده
+    if (now - roomState.lastDrawTime < roomState.drawInterval) {
+      return;
+    }
+
+    // بررسی اینکه آیا عدد باقی مانده است
+    if (roomState.remainingNumbers.length === 0) {
+      this.logger.log(`All numbers drawn for room ${roomState.activeRoomId}`);
+      return;
+    }
+
+    // انتخاب عدد تصادفی
+    const idx = Math.floor(Math.random() * roomState.remainingNumbers.length);
+    const numberToDraw = roomState.remainingNumbers[idx];
+
+    // حذف از آرایه و اضافه به Set
+    roomState.remainingNumbers.splice(idx, 1);
+    roomState.drawnNumbers.add(numberToDraw);
+    roomState.lastDrawTime = now;
+
+    // ثبت فوری در دیتابیس (داده critical)
     try {
-      // Check if active room already exists
-      const existingActiveRoom = await this.activeRoomRepository.findOne({
-        where: {
-          gameRoomId: gameRoom.id,
-          status: RoomStatus.PENDING,
-        },
+      const entity = this.drawnNumberRepository.create({
+        activeRoomId: roomState.activeRoomId,
+        number: numberToDraw,
       });
-
-      if (existingActiveRoom) {
-        this.logger.log(
-          `Active room already exists for game room ${gameRoom.id}`,
-        );
-        this.startTimer(existingActiveRoom);
-        return existingActiveRoom;
-      }
-
-      // Create new active room
-      const activeRoom = this.activeRoomRepository.create({
-        gameRoomId: gameRoom.id,
-        remainingSeconds: gameRoom.startTimer, // Initialize with startTimer seconds
-        status: RoomStatus.PENDING,
-      });
-
-      const savedActiveRoom = await this.activeRoomRepository.save(activeRoom);
+      await this.drawnNumberRepository.save(entity);
+      
       this.logger.log(
-        `Created active room ${savedActiveRoom.id} for game room ${gameRoom.id}`,
+        `Drew number ${numberToDraw} for room ${roomState.activeRoomId} (${roomState.drawnNumbers.size}/90)`,
       );
-
-      // Start timer for this room
-      this.startTimer(savedActiveRoom);
-      return savedActiveRoom;
     } catch (error) {
-      this.logger.error(
-        `Error creating active room for game room ${gameRoom.id}:`,
-        error,
-      );
+      // در صورت خطا، عدد را برگردان
+      roomState.drawnNumbers.delete(numberToDraw);
+      roomState.remainingNumbers.splice(idx, 0, numberToDraw);
+      this.logger.error(`Error saving drawn number: ${error.message}`);
       throw error;
     }
   }
 
   /**
-   * Start timer for an active room
+   * شروع Sync دوره‌ای با دیتابیس
    */
-  private startTimer(activeRoom: ActiveRoomGlobal) {
-    // Clear existing timer if any
-    this.stopTimer(activeRoom.id);
+  private startSyncLoop() {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+    }
 
-    const timer = setInterval(async () => {
-      await this.processTimerTick(activeRoom);
-    }, 1000); // Every second
+    this.syncInterval = setInterval(() => {
+      this.syncStateToDatabase();
+    }, this.SYNC_INTERVAL);
 
-    this.timers.set(activeRoom.id, timer);
-    this.logger.log(`Started timer for active room ${activeRoom.id}`);
+    this.logger.log('Sync loop started');
   }
 
   /**
-   * Stop timer for an active room
+   * Sync کردن State حافظه با دیتابیس
    */
-  private stopTimer(activeRoomId: number) {
-    const timer = this.timers.get(activeRoomId);
-    if (timer) {
-      clearInterval(timer);
-      this.timers.delete(activeRoomId);
-      this.logger.log(`Stopped timer for active room ${activeRoomId}`);
+  private async syncStateToDatabase() {
+    const syncStartTime = Date.now();
+    let syncedCount = 0;
+
+    for (const [activeRoomId, roomState] of this.roomStates.entries()) {
+      try {
+        await this.activeRoomRepository.update(
+          { id: activeRoomId },
+          {
+            remainingSeconds: roomState.remainingSeconds,
+            status: roomState.status,
+            updatedAt: new Date(),
+          },
+        );
+        
+        roomState.lastSyncTime = Date.now();
+        syncedCount++;
+      } catch (error) {
+        this.logger.error(`Error syncing room ${activeRoomId}: ${error.message}`);
+      }
+    }
+
+    const syncDuration = Date.now() - syncStartTime;
+    this.logger.debug(
+      `Synced ${syncedCount} rooms to database in ${syncDuration}ms`,
+    );
+  }
+
+  /**
+   * مدیریت خطاهای روم - Safe-Stop
+   */
+  private handleRoomError(roomState: RoomState, error: any) {
+    roomState.errorCount++;
+    roomState.lastError = error.message;
+
+    this.logger.error(
+      `Error in room ${roomState.activeRoomId} (error count: ${roomState.errorCount}): ${error.message}`,
+      error.stack,
+    );
+
+    // اگر خطا بیش از حد تکرار شد، روم را به حالت DEACTIVATED ببر
+    if (roomState.errorCount >= 3) {
+      roomState.status = RoomStatus.DEACTIVATED;
+      this.logger.error(
+        `Room ${roomState.activeRoomId} moved to DEACTIVATED state due to repeated errors`,
+      );
+      
+      // Sync فوری با دیتابیس
+      this.activeRoomRepository
+        .update(
+          { id: roomState.activeRoomId },
+          { status: RoomStatus.DEACTIVATED, updatedAt: new Date() },
+        )
+        .catch((err) =>
+          this.logger.error(`Failed to update room status in DB: ${err.message}`),
+        );
     }
   }
 
   /**
-   * Process timer tick for an active room - Simplified version
+   * مدیریت انقضای تایمر
    */
-  private async processTimerTick(activeRoom: ActiveRoomGlobal) {
+  private async handleTimerExpired(roomState: RoomState) {
     try {
       const gameRoom = await this.gameRoomRepository.findOne({
-        where: { id: activeRoom.gameRoomId },
+        where: { id: roomState.gameRoomId },
       });
 
       if (!gameRoom) {
-        this.logger.error(`Game room ${activeRoom.gameRoomId} not found`);
-        this.stopTimer(activeRoom.id);
+        this.logger.error(`Game room ${roomState.gameRoomId} not found`);
+        this.roomStates.delete(roomState.activeRoomId);
         return;
       }
 
-      // Decrease remainingSeconds by 1 second in memory
-      activeRoom.remainingSeconds -= 1;
-
-      // Simple UPDATE in database
-      await this.activeRoomRepository.update(
-        { id: activeRoom.id },
-        { 
-          remainingSeconds: () => `"remainingSeconds" - 1`,
-          updatedAt: new Date()
-        },
-      );
-
-      this.logger.debug(
-        `Room ${activeRoom.id} tick: ${activeRoom.remainingSeconds}s remaining`,
-      );
-
-      // If timer reached zero
-      if (activeRoom.remainingSeconds <= 0) {
-        await this.stopTimer(activeRoom.id);
-        await this.startNumberDrawing(activeRoom);
-        return;
-      }
+      await this.checkPlayerCountAndProceed(roomState, gameRoom);
     } catch (error) {
-      this.logger.error(
-        `Error processing timer tick for active room ${activeRoom.id}:`,
-        error,
-      );
+      this.handleRoomError(roomState, error);
     }
   }
 
   /**
-   * Check player count and either start the game or reset timer
+   * بررسی تعداد بازیکنان و شروع یا ریست بازی
    */
   private async checkPlayerCountAndProceed(
-    activeRoom: ActiveRoomGlobal,
+    roomState: RoomState,
     gameRoom: GameRoom,
   ) {
     try {
-      // Count unique users who reserved cards for this active room
+      // شمارش بازیکنان
       const playerCount = await this.reservationRepository
         .createQueryBuilder('reservation')
         .where('reservation.activeRoomId = :activeRoomId', {
-          activeRoomId: activeRoom.id,
+          activeRoomId: roomState.activeRoomId,
         })
         .select('COUNT(DISTINCT reservation.userId)', 'count')
         .getRawOne();
@@ -216,68 +303,147 @@ export class AutoTimerService implements OnModuleInit {
       const uniquePlayerCount = parseInt(playerCount.count) || 0;
 
       this.logger.log(
-        `Active room ${activeRoom.id}: ${uniquePlayerCount}/${gameRoom.minPlayers} players`,
+        `Room ${roomState.activeRoomId}: ${uniquePlayerCount}/${gameRoom.minPlayers} players`,
       );
 
       if (uniquePlayerCount >= gameRoom.minPlayers) {
-        // Enough players, proceed with game logic
-        await this.proceedWithGame(activeRoom);
+        await this.startGame(roomState);
       } else {
-        // Not enough players, reset timer and status
-        await this.resetTimer(activeRoom, gameRoom);
+        await this.resetRoomTimer(roomState, gameRoom);
       }
     } catch (error) {
-      this.logger.error(
-        `Error checking player count for active room ${activeRoom.id}:`,
-        error,
-      );
+      this.handleRoomError(roomState, error);
     }
   }
 
   /**
-   * Proceed with game logic (status is already started)
+   * شروع بازی
    */
-  private async proceedWithGame(activeRoom: ActiveRoomGlobal) {
+  private async startGame(roomState: RoomState) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // Status is already set to STARTED in processTimerTick
-      activeRoom.updatedAt = new Date();
-      await queryRunner.manager.save(ActiveRoomGlobal, activeRoom);
+      // تغییر وضعیت به STARTED
+      roomState.status = RoomStatus.STARTED;
+      roomState.lastDrawTime = Date.now();
+      
+      // آماده‌سازی Number Drawing
+      const allNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
+      roomState.remainingNumbers = [...allNumbers];
+      roomState.drawnNumbers = new Set();
 
-      this.stopTimer(activeRoom.id);
-      this.logger.log(`Game proceeding for active room ${activeRoom.id}`);
+      // ثبت در دیتابیس
+      await queryRunner.manager.update(
+        ActiveRoomGlobal,
+        { id: roomState.activeRoomId },
+        { status: RoomStatus.STARTED, updatedAt: new Date() },
+      );
 
-      // پردازش تراکنش‌های خرید کارت
-      await this.processCardPurchases(activeRoom, queryRunner);
+      // پردازش خرید کارت‌ها
+      await this.processCardPurchases(roomState.activeRoomId, queryRunner);
 
-      // توزیع کارت‌ها به کاربران
-      await this.distributeCardsToUsers(activeRoom, queryRunner);
+      // توزیع کارت‌ها
+      await this.distributeCardsToUsers(roomState.activeRoomId, queryRunner);
 
       await queryRunner.commitTransaction();
 
-      // شروع خواندن اعداد بعد از 3 ثانیه مکث
-      setTimeout(async () => {
-        await this.startNumberDrawing(activeRoom);
-      }, 3000);
+      this.logger.log(`Game started for room ${roomState.activeRoomId}`);
 
-      // ایجاد اتاق جدید pending برای همان gameRoomId
-      await this.createNewPendingRoom(activeRoom.gameRoomId);
+      // ایجاد روم pending جدید
+      await this.createNewPendingRoom(roomState.gameRoomId);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(
-        `Error starting game for active room ${activeRoom.id}:`,
-        error,
-      );
+      this.handleRoomError(roomState, error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
   }
 
   /**
-   * Create a new pending room for the same gameRoomId after starting a game
+   * ریست تایمر روم
+   */
+  private async resetRoomTimer(roomState: RoomState, gameRoom: GameRoom) {
+    roomState.remainingSeconds = gameRoom.startTimer;
+    roomState.status = RoomStatus.PENDING;
+
+    this.logger.log(
+      `Timer reset for room ${roomState.activeRoomId}, restarting countdown`,
+    );
+  }
+
+  /**
+   * اضافه کردن روم جدید به State
+   */
+  private addRoomToState(activeRoom: ActiveRoomGlobal, gameRoom: GameRoom) {
+    const roomState: RoomState = {
+      activeRoomId: activeRoom.id,
+      gameRoomId: activeRoom.gameRoomId,
+      status: activeRoom.status,
+      remainingSeconds: activeRoom.remainingSeconds,
+      drawnNumbers: new Set(),
+      remainingNumbers: [],
+      lastDrawTime: 0,
+      drawInterval: this.NUMBER_DRAW_INTERVAL,
+      lastSyncTime: Date.now(),
+      errorCount: 0,
+    };
+
+    this.roomStates.set(activeRoom.id, roomState);
+    this.logger.log(`Added room ${activeRoom.id} to state management`);
+  }
+
+  /**
+   * Ensure pending rooms exist for all active game rooms (like old project)
+   */
+  private async ensurePendingRooms() {
+    try {
+      const activeGameRooms = await this.gameRoomRepository.find({
+        where: {
+          isActive: true,
+          type: RoomType.GLOBAL,
+        },
+      });
+
+      this.logger.log(`Found ${activeGameRooms.length} active GLOBAL rooms`);
+
+      for (const gameRoom of activeGameRooms) {
+        // بررسی اینکه آیا روم pending برای این gameRoom وجود دارد یا نه
+        const existingPendingRoom = await this.activeRoomRepository.findOne({
+          where: {
+            gameRoomId: gameRoom.id,
+            status: RoomStatus.PENDING,
+          },
+        });
+
+        if (!existingPendingRoom) {
+          // ایجاد روم pending جدید
+          const newActiveRoom = this.activeRoomRepository.create({
+            gameRoomId: gameRoom.id,
+            remainingSeconds: gameRoom.startTimer,
+            status: RoomStatus.PENDING,
+          });
+
+          const savedActiveRoom = await this.activeRoomRepository.save(newActiveRoom);
+          this.logger.log(`Created pending room ${savedActiveRoom.id} for game room ${gameRoom.id}`);
+          
+          // اضافه به State
+          this.addRoomToState(savedActiveRoom, gameRoom);
+        } else {
+          this.logger.log(`Pending room already exists for game room ${gameRoom.id}`);
+          // اضافه به State
+          this.addRoomToState(existingPendingRoom, gameRoom);
+        }
+      }
+    } catch (error) {
+      this.logger.error('Error ensuring pending rooms:', error);
+    }
+  }
+
+  /**
+   * ایجاد روم pending جدید برای همان gameRoomId
    */
   private async createNewPendingRoom(gameRoomId: number) {
     try {
@@ -321,8 +487,8 @@ export class AutoTimerService implements OnModuleInit {
         `Created new pending room ${savedActiveRoom.id} for game room ${gameRoomId}`,
       );
 
-      // شروع تایمر برای اتاق جدید
-      this.startTimer(savedActiveRoom);
+      // اضافه به State
+      this.addRoomToState(savedActiveRoom, gameRoom);
     } catch (error) {
       this.logger.error(
         `Error creating new pending room for game room ${gameRoomId}:`,
@@ -335,7 +501,7 @@ export class AutoTimerService implements OnModuleInit {
    * پردازش تراکنش‌های خرید کارت برای کاربران (فقط برای روم‌های started)
    */
   private async processCardPurchases(
-    activeRoom: ActiveRoomGlobal,
+    activeRoomId: number,
     queryRunner: any,
   ) {
     try {
@@ -343,14 +509,14 @@ export class AutoTimerService implements OnModuleInit {
       // چون فقط کارت‌های pending باید خریداری شوند
       const reservations = await queryRunner.manager.find(Reservation, {
         where: {
-          activeRoomId: activeRoom.id,
+          activeRoomId: activeRoomId,
           status: 'pending', // فقط رزروهای pending
         },
       });
 
       if (reservations.length === 0) {
         this.logger.log(
-          `No pending reservations found for active room ${activeRoom.id}`,
+          `No pending reservations found for active room ${activeRoomId}`,
         );
         return;
       }
@@ -382,22 +548,22 @@ export class AutoTimerService implements OnModuleInit {
           amount: totalAmount,
           type: TransactionType.CARD_PURCHASE,
           status: TransactionStatus.CONFIRMED,
-          description: `خرید کارت برای اتاق ${activeRoom.id} (مجموع کارت‌های رزرو شده)`,
+          description: `خرید کارت برای اتاق ${activeRoomId} (مجموع کارت‌های رزرو شده)`,
         });
 
         await queryRunner.manager.save(WalletTransaction, transaction);
 
         this.logger.log(
-          `Processed card purchase for user ${userId} in active room ${activeRoom.id}: ${totalAmount} toman`,
+          `Processed card purchase for user ${userId} in active room ${activeRoomId}: ${totalAmount} toman`,
         );
       }
 
       this.logger.log(
-        `Card purchases processed for ${userReservationsMap.size} users in active room ${activeRoom.id}`,
+        `Card purchases processed for ${userReservationsMap.size} users in active room ${activeRoomId}`,
       );
     } catch (error) {
       this.logger.error(
-        `Error processing card purchases for active room ${activeRoom.id}:`,
+        `Error processing card purchases for active room ${activeRoomId}:`,
         error,
       );
       throw error;
@@ -405,45 +571,24 @@ export class AutoTimerService implements OnModuleInit {
   }
 
   /**
-   * Reset timer for an active room
-   */
-  private async resetTimer(activeRoom: ActiveRoomGlobal, gameRoom: GameRoom) {
-    try {
-      activeRoom.remainingSeconds = gameRoom.startTimer; // Reset to original startTimer value
-      activeRoom.status = RoomStatus.PENDING; // Reset status to pending
-      activeRoom.updatedAt = new Date();
-      await this.activeRoomRepository.save(activeRoom);
-
-      this.logger.log(
-        `Timer reset for active room ${activeRoom.id}, status changed to pending, restarting countdown`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Error resetting timer for active room ${activeRoom.id}:`,
-        error,
-      );
-    }
-  }
-
-  /**
    * توزیع کارت‌ها به کاربران بر اساس تعداد کارت‌های رزرو شده
    */
   private async distributeCardsToUsers(
-    activeRoom: ActiveRoomGlobal,
+    activeRoomId: number,
     queryRunner?: any,
   ) {
     try {
       // دریافت تمام رزروهای مربوط به این اتاق
       const reservations = queryRunner
         ? await queryRunner.manager.find(Reservation, {
-            where: { activeRoomId: activeRoom.id },
+            where: { activeRoomId: activeRoomId },
           })
         : await this.reservationRepository.find({
-            where: { activeRoomId: activeRoom.id },
+            where: { activeRoomId: activeRoomId },
           });
 
       this.logger.log(
-        `Distributing cards for ${reservations.length} reservations in active room ${activeRoom.id}`,
+        `Distributing cards for ${reservations.length} reservations in active room ${activeRoomId}`,
       );
 
       // دریافت تمام کارت‌های موجود
@@ -475,12 +620,12 @@ export class AutoTimerService implements OnModuleInit {
           const userReservedCard = queryRunner
             ? queryRunner.manager.create(UserReservedCard, {
                 userId: reservation.userId,
-                activeRoomId: activeRoom.id,
+                activeRoomId: activeRoomId,
                 cardId: card.id,
               })
             : this.userReservedCardRepository.create({
                 userId: reservation.userId,
-                activeRoomId: activeRoom.id,
+                activeRoomId: activeRoomId,
                 cardId: card.id,
               });
 
@@ -498,11 +643,11 @@ export class AutoTimerService implements OnModuleInit {
       }
 
       this.logger.log(
-        `Card distribution completed for active room ${activeRoom.id}`,
+        `Card distribution completed for active room ${activeRoomId}`,
       );
     } catch (error) {
       this.logger.error(
-        `Error distributing cards for active room ${activeRoom.id}:`,
+        `Error distributing cards for active room ${activeRoomId}:`,
         error,
       );
       throw error;
@@ -510,118 +655,18 @@ export class AutoTimerService implements OnModuleInit {
   }
 
   /**
-   * شروع خواندن اعداد (هر 3 ثانیه یک عدد) - نسخه ساده
-   */
-  private async startNumberDrawing(activeRoom: ActiveRoomGlobal) {
-    this.logger.log(`Starting number drawing for active room ${activeRoom.id}`);
-
-    // بررسی اینکه آیا قبلاً number drawing برای این activeRoom وجود دارد
-    if (this.sequentialDrawingRooms.has(activeRoom.id)) {
-      this.logger.warn(`Number drawing already started for active room ${activeRoom.id}, skipping`);
-      return;
-    }
-
-    // توقف number drawing قبلی اگر وجود دارد
-    this.stopNumberDrawing(activeRoom.id);
-
-    // شروع حلقه متوالی ساده
-    this.startSequentialNumberDrawing(activeRoom);
-  }
-
-  /**
-   * حلقه متوالی برای خواندن اعداد - نسخه با setInterval واقعی
-   */
-  private startSequentialNumberDrawing(activeRoom: ActiveRoomGlobal) {
-    const interval = 3000; // 3 ثانیه
-    this.logger.log(`Starting sequential number drawing for active room ${activeRoom.id}`);
-
-    // جلوگیری از شروع دوباره برای همان روم
-    if (this.sequentialDrawingRooms.has(activeRoom.id)) return;
-    this.sequentialDrawingRooms.add(activeRoom.id);
-
-    // آرایه اعداد 1 تا 90
-    const allNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
-
-    // خواندن اعداد قبلی از دیتابیس
-    this.drawnNumberRepository.find({
-      where: { activeRoomId: activeRoom.id },
-      select: ['number'],
-    }).then(existing => {
-      const drawnNumbers = new Set(existing.map(d => d.number));
-      let remainingNumbers = allNumbers.filter(n => !drawnNumbers.has(n));
-
-      const drawTick = () => {
-        if (this.cancelledRooms.has(activeRoom.id)) {
-          this.logger.log(`Number drawing cancelled for room ${activeRoom.id}`);
-          clearInterval(timer);
-          this.sequentialDrawingRooms.delete(activeRoom.id);
-          return;
-        }
-
-        if (remainingNumbers.length === 0) {
-          this.logger.log(`All numbers drawn for active room ${activeRoom.id}`);
-          clearInterval(timer);
-          this.sequentialDrawingRooms.delete(activeRoom.id);
-          return;
-        }
-
-        // انتخاب عدد تصادفی
-        const idx = Math.floor(Math.random() * remainingNumbers.length);
-        const numberToDraw = remainingNumbers[idx];
-
-        // حذف عدد از آرایه باقی‌مانده
-        remainingNumbers.splice(idx, 1);
-
-        // ثبت async روی دیتابیس بدون await مستقیم روی تایمر
-        const entity = this.drawnNumberRepository.create({
-          activeRoomId: activeRoom.id,
-          number: numberToDraw,
-        });
-        this.drawnNumberRepository.save(entity)
-          .then(() => this.logger.log(`Drew number ${numberToDraw} for room ${activeRoom.id}`))
-          .catch(err => this.logger.error(`Error saving drawn number: ${err}`));
-      };
-
-      // تایمر واقعی 3 ثانیه‌ای
-      const timer = setInterval(drawTick, interval);
-      this.roomTimeouts.set(activeRoom.id, timer);
-    }).catch(error => {
-      this.logger.error(`Error loading existing numbers for room ${activeRoom.id}:`, error);
-      this.sequentialDrawingRooms.delete(activeRoom.id);
-    });
-  }
-
-  /**
    * تبدیل string به BigInt برای PostgreSQL advisory lock
    */
   private hashStringToBigInt(str: string): bigint {
-    let hash = BigInt(0);
+    // استفاده از hash ساده‌تر که همیشه در محدوده PostgreSQL قرار دارد
+    let hash = 0;
     for (let i = 0; i < str.length; i++) {
-      const char = BigInt(str.charCodeAt(i));
-      hash = ((hash << BigInt(5)) - hash) + char;
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
     }
-    // محدود به 63 بیت مثبت برای PostgreSQL
-    return hash & BigInt(0x7FFFFFFFFFFFFFFF);
-  }
-
-  /**
-   * Stop number drawing for a specific active room - Simplified version
-   */
-  private stopNumberDrawing(activeRoomId: number) {
-    // توقف sequential drawing
-    if (this.sequentialDrawingRooms.has(activeRoomId)) {
-      this.sequentialDrawingRooms.delete(activeRoomId);
-      this.cancelledRooms.add(activeRoomId); // علامت‌گذاری برای توقف
-      
-      // پاک‌سازی interval/timeout
-      const timer = this.roomTimeouts.get(activeRoomId);
-      if (timer) {
-        clearInterval(timer);
-        this.roomTimeouts.delete(activeRoomId);
-      }
-      
-      this.logger.log(`Stopped sequential number drawing for active room ${activeRoomId}`);
-    }
+    // تبدیل به BigInt مثبت
+    return BigInt(Math.abs(hash));
   }
 
   /**
@@ -681,56 +726,6 @@ export class AutoTimerService implements OnModuleInit {
   }
 
   /**
-   * دریافت وضعیت تمام روم‌های فعال
-   */
-  getActiveRoomsStatus() {
-    return {
-      activeTimers: this.timers.size,
-      activeSequentialDrawing: this.sequentialDrawingRooms.size,
-      cancelledRooms: this.cancelledRooms.size,
-      sequentialRooms: Array.from(this.sequentialDrawingRooms),
-      cancelledRoomsList: Array.from(this.cancelledRooms),
-    };
-  }
-
-  /**
-   * Health check برای monitoring
-   */
-  async healthCheck() {
-    try {
-      const status = this.getActiveRoomsStatus();
-      
-      // بررسی روم‌های فعال در دیتابیس
-      const activeRoomsInDb = await this.activeRoomRepository.count({
-        where: { status: RoomStatus.STARTED },
-      });
-
-      // اطلاعات monitoring برای هر روم (ساده‌شده)
-      const roomMonitoring = Array.from(this.sequentialDrawingRooms).map(roomId => {
-        return {
-          roomId,
-          status: 'active',
-        };
-      });
-
-      return {
-        ...status,
-        activeRoomsInDatabase: activeRoomsInDb,
-        roomMonitoring,
-        isHealthy: true,
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      this.logger.error('Health check failed:', error);
-      return {
-        isHealthy: false,
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      };
-    }
-  }
-
-  /**
    * بررسی وضعیت Lock برای یک روم خاص
    */
   async checkRoomLockStatus(activeRoomId: number) {
@@ -773,21 +768,23 @@ export class AutoTimerService implements OnModuleInit {
     try {
       const lockKey = this.hashStringToBigInt(`number_drawing_${activeRoomId}`);
       const instanceLock = this.hashStringToBigInt(`instance_lock_${activeRoomId}`);
+      const roomStartLock = this.hashStringToBigInt(`room_start_${activeRoomId}`);
       
-      // Force unlock
-      await this.dataSource.query(
-        'SELECT pg_advisory_unlock_all()',
-        []
+      // Force unlock specific room locks only
+      const unlockResults = await this.dataSource.query(
+        'SELECT pg_advisory_unlock($1) as number_lock, pg_advisory_unlock($2) as instance_lock, pg_advisory_unlock($3) as room_start_lock',
+        [lockKey.toString(), instanceLock.toString(), roomStartLock.toString()]
       );
 
-      this.logger.warn(`Force unlocked all locks for room ${activeRoomId}`);
+      this.logger.warn(`Force unlocked specific locks for room ${activeRoomId}:`, unlockResults[0]);
       
       return {
         activeRoomId,
         unlocked: true,
+        unlockResults: unlockResults[0],
         timestamp: new Date().toISOString(),
       };
-      } catch (error) {
+    } catch (error) {
       this.logger.error(`Error force unlocking room ${activeRoomId}:`, error);
       return {
         activeRoomId,
@@ -798,7 +795,7 @@ export class AutoTimerService implements OnModuleInit {
   }
 
   /**
-   * بازیابی وضعیت روم‌های فعال بعد از restart
+   * بازیابی وضعیت روم‌های فعال بعد از restart - با State Management
    */
   async recoverActiveRooms() {
     try {
@@ -811,41 +808,37 @@ export class AutoTimerService implements OnModuleInit {
       });
 
       for (const activeRoom of activeRooms) {
-        // بررسی Multi-Instance: فقط یک instance باید number drawing را مدیریت کند
-        const instanceLock = this.hashStringToBigInt(`instance_lock_${activeRoom.id}`);
-        const lockResult = await this.dataSource.query(
-          'SELECT pg_try_advisory_lock($1) as locked',
-          [instanceLock.toString()]
+        this.logger.log(`Recovering active room ${activeRoom.id}`);
+        
+        // خواندن اعداد کشیده شده از دیتابیس
+        const drawnNumbersFromDb = await this.drawnNumberRepository.find({
+          where: { activeRoomId: activeRoom.id },
+          select: ['number'],
+        });
+
+        const drawnNumbers = new Set(drawnNumbersFromDb.map(d => d.number));
+        const allNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
+        const remainingNumbers = allNumbers.filter(n => !drawnNumbers.has(n));
+
+        // ایجاد State روم در حافظه
+        const roomState: RoomState = {
+          activeRoomId: activeRoom.id,
+          gameRoomId: activeRoom.gameRoomId,
+          status: RoomStatus.STARTED,
+          remainingSeconds: activeRoom.remainingSeconds,
+          drawnNumbers: drawnNumbers,
+          remainingNumbers: remainingNumbers,
+          lastDrawTime: Date.now() - this.NUMBER_DRAW_INTERVAL, // فوری شروع به کشیدن کند
+          drawInterval: this.NUMBER_DRAW_INTERVAL,
+          lastSyncTime: Date.now(),
+          errorCount: 0,
+        };
+
+        this.roomStates.set(activeRoom.id, roomState);
+        
+        this.logger.log(
+          `Recovered room ${activeRoom.id}: ${drawnNumbers.size}/90 numbers drawn, ${remainingNumbers.length} remaining`,
         );
-
-        if (!lockResult[0].locked) {
-          this.logger.warn(`Another instance is managing room ${activeRoom.id}, skipping`);
-          continue;
-        }
-
-        try {
-          this.logger.log(`Recovering active room ${activeRoom.id}`);
-          
-          // بررسی اینکه آیا قبلاً اعداد خوانده شده
-          const drawnNumbers = await this.drawnNumberRepository.find({
-            where: { activeRoomId: activeRoom.id },
-            select: ['number'],
-          });
-
-          // اگر کمتر از 90 عدد خوانده شده، ادامه دادن
-          if (drawnNumbers.length < 90) {
-            await this.startNumberDrawing(activeRoom);
-            this.logger.log(`Recovered number drawing for active room ${activeRoom.id}`);
-          } else {
-            this.logger.log(`Active room ${activeRoom.id} already has all numbers drawn`);
-          }
-        } finally {
-          // آزاد کردن instance lock
-          await this.dataSource.query(
-            'SELECT pg_advisory_unlock($1)',
-            [instanceLock.toString()]
-          );
-        }
       }
 
       this.logger.log(`Recovery completed for ${activeRooms.length} active rooms`);
@@ -855,31 +848,133 @@ export class AutoTimerService implements OnModuleInit {
   }
 
   /**
-   * Stop all timers and number drawing intervals (useful for shutdown) - Simplified
+   * Stop all timers and intervals (useful for shutdown)
    */
   onModuleDestroy() {
-    // Stop all timers
-    this.timers.forEach((timer, activeRoomId) => {
-      clearInterval(timer);
-      this.logger.log(`Stopped timer for active room ${activeRoomId}`);
-    });
-    this.timers.clear();
+    // Stop main loop
+    if (this.mainLoopInterval) {
+      clearInterval(this.mainLoopInterval);
+      this.mainLoopInterval = null;
+      this.logger.log('Main loop stopped');
+    }
 
-    // Stop all sequential drawing
-    this.sequentialDrawingRooms.forEach((activeRoomId) => {
-      this.cancelledRooms.add(activeRoomId);
-      this.logger.log(`Stopped sequential number drawing for active room ${activeRoomId}`);
-    });
-    this.sequentialDrawingRooms.clear();
-    this.cancelledRooms.clear();
+    // Stop sync loop
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
+      this.logger.log('Sync loop stopped');
+    }
+
+    // پاکسازی State
+    this.roomStates.clear();
     
-    // Stop all room timeouts/intervals
-    this.roomTimeouts.forEach((timer, activeRoomId) => {
-      clearInterval(timer);
-      this.logger.log(`Stopped timer for active room ${activeRoomId}`);
-    });
-    this.roomTimeouts.clear();
-    
-    this.logger.log(`Module destroyed - All timers and number drawing stopped`);
+    this.logger.log('Module destroyed - All timers and state cleared');
+  }
+
+  /**
+   * دریافت وضعیت تمام روم‌های فعال - بهبود یافته
+   */
+  getActiveRoomsStatus() {
+    const roomsList = Array.from(this.roomStates.values()).map(room => ({
+      activeRoomId: room.activeRoomId,
+      gameRoomId: room.gameRoomId,
+      status: room.status,
+      remainingSeconds: room.remainingSeconds,
+      drawnCount: room.drawnNumbers.size,
+      remainingCount: room.remainingNumbers.length,
+      errorCount: room.errorCount,
+      lastError: room.lastError,
+      timeSinceLastSync: Date.now() - room.lastSyncTime,
+      timeSinceLastDraw: room.status === RoomStatus.STARTED 
+        ? Date.now() - room.lastDrawTime 
+        : null,
+    }));
+
+    return {
+      totalRooms: this.roomStates.size,
+      pendingRooms: roomsList.filter(r => r.status === RoomStatus.PENDING).length,
+      startedRooms: roomsList.filter(r => r.status === RoomStatus.STARTED).length,
+      errorRooms: roomsList.filter(r => r.errorCount > 0).length,
+      rooms: roomsList,
+      mainLoopActive: this.mainLoopInterval !== null,
+      syncLoopActive: this.syncInterval !== null,
+    };
+  }
+
+  /**
+   * Health check برای monitoring - بهبود یافته
+   */
+  async healthCheck() {
+    try {
+      const status = this.getActiveRoomsStatus();
+      
+      // بررسی روم‌های فعال در دیتابیس
+      const pendingRoomsInDb = await this.activeRoomRepository.count({
+        where: { status: RoomStatus.PENDING },
+      });
+      
+      const startedRoomsInDb = await this.activeRoomRepository.count({
+        where: { status: RoomStatus.STARTED },
+      });
+
+      // بررسی Room های مشکل‌دار
+      const problematicRooms = status.rooms.filter(
+        r => r.errorCount >= 3 || r.timeSinceLastSync > 30000, // 30 ثانیه
+      );
+
+      // بررسی Sync های عقب افتاده
+      const outOfSyncRooms = status.rooms.filter(
+        r => r.timeSinceLastSync > this.SYNC_INTERVAL * 3, // 3 برابر sync interval
+      );
+
+      return {
+        isHealthy: problematicRooms.length === 0 && status.mainLoopActive && status.syncLoopActive,
+        timestamp: new Date().toISOString(),
+        
+        // اطلاعات State در حافظه
+        memoryState: {
+          totalRooms: status.totalRooms,
+          pendingRooms: status.pendingRooms,
+          startedRooms: status.startedRooms,
+          errorRooms: status.errorRooms,
+        },
+        
+        // اطلاعات دیتابیس
+        databaseState: {
+          pendingRooms: pendingRoomsInDb,
+          startedRooms: startedRoomsInDb,
+        },
+        
+        // وضعیت Loop ها
+        loops: {
+          mainLoopActive: status.mainLoopActive,
+          mainLoopInterval: this.MAIN_LOOP_INTERVAL,
+          syncLoopActive: status.syncLoopActive,
+          syncInterval: this.SYNC_INTERVAL,
+        },
+        
+        // مشکلات
+        issues: {
+          problematicRooms: problematicRooms.length,
+          outOfSyncRooms: outOfSyncRooms.length,
+          details: problematicRooms.map(r => ({
+            activeRoomId: r.activeRoomId,
+            errorCount: r.errorCount,
+            lastError: r.lastError,
+            timeSinceLastSync: r.timeSinceLastSync,
+          })),
+        },
+        
+        // اطلاعات کامل روم‌ها (اختیاری)
+        rooms: status.rooms,
+      };
+    } catch (error) {
+      this.logger.error('Health check failed:', error);
+      return {
+        isHealthy: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
   }
 }

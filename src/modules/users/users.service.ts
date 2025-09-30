@@ -23,18 +23,39 @@ export class UsersService {
   ) {}
 
   async getProfile(userId: number): Promise<UserProfileResponseDto> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.username',
+        'user.firstName',
+        'user.lastName',
+        'user.phoneNumber',
+        'user.bankCardNumber',
+        'user.shebaNumber',
+        'user.role',
+        'user.walletBalance',
+        'user.createdAt',
+        'user.referralCode',
+        'user.referredBy',
+      ])
+      .where('user.id = :userId', { userId })
+      .getOne();
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const reservations = await this.reservationRepository.find({
-      where: { userId },
-      select: ['activeRoomId', 'cardCount', 'entryFee', 'status'],
-    });
+    const reservations = await this.reservationRepository
+      .createQueryBuilder('reservation')
+      .select([
+        'reservation.activeRoomId',
+        'reservation.cardCount',
+        'reservation.entryFee',
+        'reservation.status',
+      ])
+      .where('reservation.userId = :userId', { userId })
+      .getMany();
 
     // محاسبه مبلغ کارت‌های رزرو شده در روم‌های pending
     const reservedCardsAmount =
