@@ -51,26 +51,38 @@ export class CreateReservationsTable1700000000010
       true, // 🟢 اگر جدول وجود نداشته باشد ایجاد شود
     );
 
-    // 🟢 ایجاد Foreign Key برای userId
-    await queryRunner.createForeignKey(
-      'reservations',
-      new TableForeignKey({
-        columnNames: ['userId'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'users',
-        onDelete: 'CASCADE',
-      }),
+    // 🟢 ایجاد Foreign Key برای userId با نام ثابت و idempotent
+    await queryRunner.query(
+      'ALTER TABLE "reservations" DROP CONSTRAINT IF EXISTS "FK_reservations_userId"',
+    );
+    await queryRunner.query(
+      `DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'FK_reservations_userId'
+        ) THEN
+          ALTER TABLE "reservations"
+          ADD CONSTRAINT "FK_reservations_userId"
+          FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE;
+        END IF;
+      END; $$;`
     );
 
-    // 🟢 ایجاد Foreign Key برای activeRoomId
-    await queryRunner.createForeignKey(
-      'reservations',
-      new TableForeignKey({
-        columnNames: ['activeRoomId'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'active_room_global',
-        onDelete: 'SET NULL', // 🟢 چون در SQL شما nullable هست
-      }),
+    // 🟢 ایجاد Foreign Key برای activeRoomId با نام ثابت و idempotent
+    await queryRunner.query(
+      'ALTER TABLE "reservations" DROP CONSTRAINT IF EXISTS "FK_reservations_activeRoomId"',
+    );
+    await queryRunner.query(
+      `DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'FK_reservations_activeRoomId'
+        ) THEN
+          ALTER TABLE "reservations"
+          ADD CONSTRAINT "FK_reservations_activeRoomId"
+          FOREIGN KEY ("activeRoomId") REFERENCES "active_room_global"("id") ON DELETE SET NULL;
+        END IF;
+      END; $$;`
     );
   }
 

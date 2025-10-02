@@ -22,6 +22,7 @@ import { Card } from '../../entities/card.entity';
 import { UserReservedCard } from '../../entities/user-reserved-card.entity';
 import { DrawnNumber } from '../../entities/drawn-number.entity';
 import { WalletModule } from '../wallet/wallet.module';
+import { SocketModule } from '../socket/socket.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { WalletModule } from '../wallet/wallet.module';
       signOptions: { expiresIn: '7d' },
     }),
     WalletModule,
+    SocketModule,
   ],
   controllers: [
     AdminController,

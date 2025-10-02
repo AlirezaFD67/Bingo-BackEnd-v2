@@ -36,13 +36,13 @@ import { ApiClientInterceptor } from './common/interceptors/api-client.intercept
     }),
     AuthModule,
     UsersModule,
-    AdminModule,
     WheelModule,
     WalletModule,
     ReservationModule,
     RoomsModule,
     SocketModule,
     SocketMockModule,
+    AdminModule, // AdminModule باید بعد از SocketModule باشد تا scheduler قبلا start شده باشد
   ],
   controllers: [AppController],
   providers: [
