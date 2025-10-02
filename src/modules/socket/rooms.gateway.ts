@@ -339,16 +339,26 @@ export class RoomsGateway
       const roomState = this.roomsCache.get(data.activeRoomId);
       if (!roomState) {
         const winners = await this.roomsService.getWinners(data.activeRoomId);
-        this.scheduler.emitToSocket(client, 'winResponse', winners);
+        this.scheduler.emitToSocket(client, 'win', {
+          data: {
+            activeRoomId: data.activeRoomId,
+            lineWinners: winners.lineWinners,
+            fullWinners: winners.fullWinners,
+            gameFinished: winners.gameFinished,
+          },
+        });
         return;
       }
 
       const winners = {
-        lineWinners: roomState.lineWinners,
-        fullWinners: roomState.fullWinners,
-        gameFinished: roomState.gameFinished,
+        data: {
+          activeRoomId: data.activeRoomId,
+          lineWinners: roomState.lineWinners,
+          fullWinners: roomState.fullWinners,
+          gameFinished: roomState.gameFinished,
+        },
       };
-      this.scheduler.emitToSocket(client, 'winResponse', winners);
+      this.scheduler.emitToSocket(client, 'win', winners);
     } catch (err) {
       client.emit('error', { message: 'Failed to fetch winners' });
     }
