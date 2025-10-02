@@ -1,4 +1,4 @@
-import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Query, BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { SocketMockService } from './socket-mock.service';
 import { PendingRoomsMockResponseDto } from './dto/pending-rooms-mock.dto';
@@ -158,7 +158,7 @@ export class SocketMockController {
     type: RoomInfoResponseDto,
   })
   async getRoomInfo(
-    @Query('activeRoomId') activeRoomId: number,
+    @Query('activeRoomId', ParseIntPipe) activeRoomId: number,
   ): Promise<RoomInfoResponseDto> {
     // Validation: Check if activeRoomId is provided and valid
     if (!activeRoomId || activeRoomId <= 0 || !Number.isInteger(activeRoomId)) {
@@ -261,7 +261,7 @@ export class SocketMockController {
       },
     },
   })
-  async getDrawnNumbers(@Query('activeRoomId') activeRoomId: number): Promise<{
+  async getDrawnNumbers(@Query('activeRoomId', ParseIntPipe) activeRoomId: number): Promise<{
     namespace: string;
     event: string;
     data: {
@@ -277,6 +277,12 @@ export class SocketMockController {
     }
 
     try {
+      // Ensure room is started
+      const roomInfo = await this.roomsService.getRoomInfo(activeRoomId);
+      if (roomInfo.status !== 'started') {
+        throw new BadRequestException('Room is not started');
+      }
+
       // Get real data from socket service
       const { drawnNumbers, total } =
         await this.roomsService.getDrawnNumbers(activeRoomId);
@@ -431,7 +437,7 @@ export class SocketMockController {
       },
     },
   })
-  async getWinners(@Query('activeRoomId') activeRoomId: number): Promise<{
+  async getWinners(@Query('activeRoomId', ParseIntPipe) activeRoomId: number): Promise<{
     namespace: string;
     event: string;
     data: {

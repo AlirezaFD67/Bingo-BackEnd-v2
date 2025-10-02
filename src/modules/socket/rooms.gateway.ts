@@ -296,22 +296,32 @@ export class RoomsGateway
       const roomState = this.roomsCache.get(data.activeRoomId);
       if (!roomState) {
         const result = await this.roomsService.getDrawnNumbers(data.activeRoomId);
+        const lastNumber =
+          result.drawnNumbers.length > 0
+            ? result.drawnNumbers[result.drawnNumbers.length - 1]
+            : null;
         const drawnData = {
           data: {
             activeRoomId: data.activeRoomId,
+            number: lastNumber,
+            totalDrawnNumbers: result.total,
             drawnNumbers: result.drawnNumbers,
-            total: result.total,
           },
         };
         this.scheduler.emitToSocket(client, 'numberDrawn', drawnData);
         return;
       }
 
+      const lastNumber =
+        roomState.drawnNumbers.length > 0
+          ? roomState.drawnNumbers[roomState.drawnNumbers.length - 1]
+          : null;
       const drawnData = {
         data: {
           activeRoomId: data.activeRoomId,
+          number: lastNumber,
+          totalDrawnNumbers: roomState.totalDrawnNumbers,
           drawnNumbers: roomState.drawnNumbers,
-          total: roomState.totalDrawnNumbers,
         },
       };
       this.scheduler.emitToSocket(client, 'numberDrawn', drawnData);
