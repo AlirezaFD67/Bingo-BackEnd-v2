@@ -10,6 +10,7 @@ import { Card } from '../../entities/card.entity';
 import { ActiveRoomWinner } from '../../entities/active-room-winners.entity';
 import { RoomStatus } from '../../enums/room-status.enum';
 import { PendingRoomDto } from './dto/pending-rooms-response.dto';
+import { SocketScheduler } from '../../utils/SocketScheduler';
 import { RoomInfoResponseDto } from './dto/room-info-response.dto';
 
 @Injectable()
@@ -35,11 +36,17 @@ export class RoomsService {
 
   /** Helper functions */
   private isLineComplete(matrix: number[][], drawnNumbers: number[]): boolean {
-    return matrix.some((row) => row.every((num) => drawnNumbers.includes(num)));
+    // سلول‌های خالی/آزاد (0 یا null) نادیده گرفته شوند
+    return matrix.some((row) =>
+      row.every((num) => num == null || num <= 0 || drawnNumbers.includes(num)),
+    );
   }
 
   private isCardComplete(matrix: number[][], drawnNumbers: number[]): boolean {
-    return matrix.flat().every((num) => drawnNumbers.includes(num));
+    // سلول‌های خالی/آزاد (0 یا null) نادیده گرفته شوند
+    return matrix
+      .flat()
+      .every((num) => num == null || num <= 0 || drawnNumbers.includes(num));
   }
 
   async getPendingRooms(): Promise<PendingRoomDto[]> {
@@ -159,11 +166,9 @@ export class RoomsService {
   async checkLineWinners(activeRoomId: number): Promise<boolean> {
     try {
       // Check if line winners already exist for this room
-      const existingLineWinners = await this.activeRoomWinnerRepository.findOne(
-        {
-          where: { activeRoomId, winType: 'line' },
-        },
-      );
+      const existingLineWinners = await this.activeRoomWinnerRepository.findOne({
+        where: { activeRoomId, winType: 'line' },
+      });
 
       if (existingLineWinners) {
         this.logger.log(
@@ -185,6 +190,10 @@ export class RoomsService {
         }),
       ]);
 
+      this.logger.debug(
+        `Line check: activeRoomId=${activeRoomId} drawn=${drawnNumbers.length} reservedCards=${reservedCards.length}`,
+      );
+
       const drawnNumbersList = drawnNumbers.map((dn) => dn.number);
       const lineWinners: Array<{ userId: number; cardId: number }> = [];
 
@@ -200,6 +209,9 @@ export class RoomsService {
               userId: reservedCard.userId,
               cardId: reservedCard.cardId,
             });
+            this.logger.debug(
+              `Line winner candidate -> userId=${reservedCard.userId} cardId=${reservedCard.cardId}`,
+            );
           }
         }
       }
@@ -216,6 +228,24 @@ export class RoomsService {
             }),
           ),
         );
+
+        // Emit socket event immediately with up-to-date winners
+        const allWinners = await this.activeRoomWinnerRepository.find({
+          where: { activeRoomId },
+        });
+        const response = {
+          data: {
+            activeRoomId,
+            lineWinners: allWinners
+              .filter((w) => w.winType === 'line')
+              .map((w) => ({ userId: w.userId, cardId: w.cardId, amount: 50000 })),
+            fullWinners: allWinners
+              .filter((w) => w.winType === 'full')
+              .map((w) => ({ userId: w.userId, cardId: w.cardId, amount: 150000 })),
+            gameFinished: false,
+          },
+        };
+        SocketScheduler.getInstance().emitToNamespace('/rooms', 'win', response);
 
         this.logger.log(
           `Found ${lineWinners.length} line winners for activeRoomId: ${activeRoomId}`,
@@ -290,6 +320,27 @@ export class RoomsService {
           { status: RoomStatus.FINISHED },
         );
 
+        // Emit socket event with final winners
+        const allWinners = await this.activeRoomWinnerRepository.find({
+          where: { activeRoomId },
+        });
+        const response = {
+          data: {
+            activeRoomId,
+            lineWinners: allWinners
+              .filter((w) => w.winType === 'line')
+              .map((w) => ({ userId: w.userId, cardId: w.cardId, amount: 50000 })),
+            fullWinners: allWinners
+              .filter((w) => w.winType === 'full')
+              .map((w) => ({ userId: w.userId, cardId: w.cardId, amount: 150000 })),
+            gameFinished: true,
+          },
+        };
+        SocketScheduler.getInstance().emitToNamespace('/rooms', 'win', response);
+
+        this.logger.log(
+          `Full winners saved (${fullWinners.length}) and room finished: activeRoomId=${activeRoomId}`,
+        );
         this.logger.log(
           `Found ${fullWinners.length} full winners for activeRoomId: ${activeRoomId}. Game finished.`,
         );

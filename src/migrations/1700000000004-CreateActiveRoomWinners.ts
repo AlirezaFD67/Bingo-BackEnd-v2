@@ -52,30 +52,28 @@ export class CreateActiveRoomWinners1700000000004
       true,
     );
 
-    // ارتباط با active_room_global
-    await queryRunner.createForeignKey(
-      'active_room_winners',
-      new TableForeignKey({
-        columnNames: ['activeRoomId'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'active_room_global',
-        onDelete: 'CASCADE',
-      }),
+    // ارتباط با active_room_global (با نام مشخص و جلوگیری از ایجاد تکراری)
+    await queryRunner.query(
+      `DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'FK_active_room_winners_activeRoomId'
+        ) THEN
+          ALTER TABLE "active_room_winners"
+          ADD CONSTRAINT "FK_active_room_winners_activeRoomId"
+          FOREIGN KEY ("activeRoomId") REFERENCES "active_room_global"("id") ON DELETE CASCADE;
+        END IF;
+      END; $$;`
     );
 
     // 🟢 می‌تونی برای userId و cardId هم ForeignKey بزنی (اختیاری)
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    const table = await queryRunner.getTable('active_room_winners');
-    if (table) {
-      const fk = table.foreignKeys.find(
-        (fk) => fk.columnNames.indexOf('activeRoomId') !== -1,
-      );
-      if (fk) {
-        await queryRunner.dropForeignKey('active_room_winners', fk);
-      }
-    }
+    // حذف FK با نام مشخص در صورت وجود
+    await queryRunner.query(
+      'ALTER TABLE "active_room_winners" DROP CONSTRAINT IF EXISTS "FK_active_room_winners_activeRoomId"',
+    );
     await queryRunner.dropTable('active_room_winners');
   }
 }

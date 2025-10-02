@@ -9,9 +9,12 @@ export class CreateWalletTransactionsTable1700000000012
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create enum types first
-    await queryRunner.query(`
-        CREATE TYPE wallet_transactions_type_enum AS ENUM (
+    // Create enum types first (idempotent)
+    await queryRunner.query(
+      `DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transactions_type_enum') THEN
+          CREATE TYPE wallet_transactions_type_enum AS ENUM (
           'charge',
           'withdraw',
           'prize',
@@ -21,16 +24,23 @@ export class CreateWalletTransactionsTable1700000000012
           'bingo_line',
           'bingo_full_card',
           'wheel_spin'
-        )
-      `);
+          );
+        END IF;
+      END; $$;`
+    );
 
-    await queryRunner.query(`
-        CREATE TYPE wallet_transactions_status_enum AS ENUM (
+    await queryRunner.query(
+      `DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transactions_status_enum') THEN
+          CREATE TYPE wallet_transactions_status_enum AS ENUM (
           'pending',
           'confirmed',
           'failed'
-        )
-      `);
+          );
+        END IF;
+      END; $$;`
+    );
 
     await queryRunner.createTable(
       new Table({
@@ -81,15 +91,21 @@ export class CreateWalletTransactionsTable1700000000012
       true, // 🟢 اگر جدول وجود نداشته باشد ایجاد شود
     );
 
-    // 🟢 Foreign Key برای userId
-    await queryRunner.createForeignKey(
-      'wallet_transactions',
-      new TableForeignKey({
-        columnNames: ['userId'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'users',
-        onDelete: 'CASCADE',
-      }),
+    // 🟢 Foreign Key برای userId با نام ثابت و idempotent
+    await queryRunner.query(
+      'ALTER TABLE "wallet_transactions" DROP CONSTRAINT IF EXISTS "FK_wallet_transactions_userId"',
+    );
+    await queryRunner.query(
+      `DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'FK_wallet_transactions_userId'
+        ) THEN
+          ALTER TABLE "wallet_transactions"
+          ADD CONSTRAINT "FK_wallet_transactions_userId"
+          FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE;
+        END IF;
+      END; $$;`
     );
   }
 

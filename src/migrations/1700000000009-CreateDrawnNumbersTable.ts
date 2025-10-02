@@ -49,19 +49,26 @@ export class CreateDrawnNumbersTable1700000000009
       true, // 🟢 اطمینان از عدم ایجاد دوباره جدول
     );
 
-    // Create index on activeRoomId for better query performance
+    // Create index on "activeRoomId" for better query performance (idempotent)
     await queryRunner.query(
-      'CREATE INDEX IDX_drawn_numbers_activeRoomId ON drawn_numbers (activeRoomId)',
+      'CREATE INDEX IF NOT EXISTS "IDX_drawn_numbers_activeRoomId" ON "drawn_numbers" ("activeRoomId")',
     );
 
-    await queryRunner.createForeignKey(
-      'drawn_numbers',
-      new TableForeignKey({
-        columnNames: ['activeRoomId'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'active_room_global',
-        onDelete: 'CASCADE', // 🟢 مطابق با تعریف SQL شما
-      }),
+    // Ensure foreign key exists with a stable name; drop legacy auto-named FK if present
+    await queryRunner.query(
+      'ALTER TABLE "drawn_numbers" DROP CONSTRAINT IF EXISTS "FK_0bd1771ab58ab3d30a89d2ea458"',
+    );
+    await queryRunner.query(
+      `DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'FK_drawn_numbers_activeRoomId'
+        ) THEN
+          ALTER TABLE "drawn_numbers"
+          ADD CONSTRAINT "FK_drawn_numbers_activeRoomId"
+          FOREIGN KEY ("activeRoomId") REFERENCES "active_room_global"("id") ON DELETE CASCADE;
+        END IF;
+      END; $$;`
     );
   }
 
@@ -70,7 +77,7 @@ export class CreateDrawnNumbersTable1700000000009
     if (table) {
       // Drop index first
       await queryRunner.query(
-        'DROP INDEX IF EXISTS IDX_drawn_numbers_activeRoomId',
+        'DROP INDEX IF EXISTS "IDX_drawn_numbers_activeRoomId"',
       );
 
       const foreignKey = table.foreignKeys.find(

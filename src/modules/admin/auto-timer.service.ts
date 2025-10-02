@@ -15,6 +15,8 @@ import {
   TransactionType,
   TransactionStatus,
 } from '../../enums/transaction-type.enum';
+import { RoomsService } from '../socket/rooms.service';
+import { SocketScheduler } from '../../utils/SocketScheduler';
 
 /**
  * Interface برای State مدیریت روم در حافظه
@@ -42,15 +44,10 @@ export class AutoTimerService implements OnModuleInit {
   // State Management در حافظه
   private roomStates: Map<number, RoomState> = new Map();
   
-  // Loop اصلی - فقط یک تایمر برای همه روم‌ها
-  private mainLoopInterval: NodeJS.Timeout | null = null;
+  // استفاده از SocketScheduler برای تایمر سراسری
+  private scheduler = SocketScheduler.getInstance();
   private readonly MAIN_LOOP_INTERVAL = 1000; // هر 1 ثانیه
-  
-  // Sync با دیتابیس
-  private syncInterval: NodeJS.Timeout | null = null;
   private readonly SYNC_INTERVAL = 5000; // هر 5 ثانیه
-  
-  // Number Drawing
   private readonly NUMBER_DRAW_INTERVAL = 3000; // هر 3 ثانیه
 
   constructor(
@@ -71,6 +68,7 @@ export class AutoTimerService implements OnModuleInit {
     @InjectRepository(WalletTransaction)
     private walletTransactionRepository: Repository<WalletTransaction>,
     private readonly dataSource: DataSource,
+    private readonly roomsService: RoomsService,
   ) {}
 
   async onModuleInit() {
@@ -85,26 +83,27 @@ export class AutoTimerService implements OnModuleInit {
     // ایجاد روم‌های pending برای game room های فعال
     await this.ensurePendingRooms();
     
-    // شروع Loop اصلی
-    this.startMainLoop();
+    // ثبت Jobها در SocketScheduler
+    this.registerSchedulerJobs();
     
-    // شروع Sync دوره‌ای با دیتابیس
-    this.startSyncLoop();
+    this.logger.log('AutoTimerService jobs registered with SocketScheduler');
   }
 
   /**
-   * شروع Loop اصلی - یک تایمر برای همه روم‌ها
+   * ثبت Jobها در SocketScheduler
    */
-  private startMainLoop() {
-    if (this.mainLoopInterval) {
-      clearInterval(this.mainLoopInterval);
-    }
+  private registerSchedulerJobs() {
+    // Job 1: Loop اصلی - پردازش همه روم‌ها
+    this.scheduler.addJob('autoTimerMainLoop', this.MAIN_LOOP_INTERVAL, async () => {
+      await this.processMainLoop();
+    }, { avoidCatchUp: true });
 
-    this.mainLoopInterval = setInterval(() => {
-      this.processMainLoop();
-    }, this.MAIN_LOOP_INTERVAL);
+    // Job 2: Sync با دیتابیس
+    this.scheduler.addJob('autoTimerSync', this.SYNC_INTERVAL, async () => {
+      await this.syncStateToDatabase();
+    }, { avoidCatchUp: true });
 
-    this.logger.log('Main loop started');
+    this.logger.log('AutoTimerService jobs registered with SocketScheduler');
   }
 
   /**
@@ -176,6 +175,31 @@ export class AutoTimerService implements OnModuleInit {
       this.logger.log(
         `Drew number ${numberToDraw} for room ${roomState.activeRoomId} (${roomState.drawnNumbers.size}/90)`,
       );
+
+      // پس از ذخیره عدد، تشخیص برنده‌ها را اجرا کن
+      // 1) برنده خطی (اگر قبلاً تعیین نشده باشد)
+      try {
+        await this.roomsService.checkLineWinners(roomState.activeRoomId);
+      } catch (e) {
+        this.logger.error(`Error checking line winners: ${e?.message || e}`);
+      }
+
+      // 2) برنده کلی - در صورت یافتن، بازی را پایان بده و از کشیدن اعداد بیشتر خودداری کن
+      try {
+        const hasFullWinners = await this.roomsService.checkFullWinners(
+          roomState.activeRoomId,
+        );
+        if (hasFullWinners) {
+          // به‌روزرسانی وضعیت State در حافظه
+          roomState.status = RoomStatus.FINISHED;
+          this.logger.log(
+            `Game finished for room ${roomState.activeRoomId} due to full winner(s).`,
+          );
+          return; // جلوی کشیدن اعداد بیشتر را بگیر
+        }
+      } catch (e) {
+        this.logger.error(`Error checking full winners: ${e?.message || e}`);
+      }
     } catch (error) {
       // در صورت خطا، عدد را برگردان
       roomState.drawnNumbers.delete(numberToDraw);
@@ -185,20 +209,6 @@ export class AutoTimerService implements OnModuleInit {
     }
   }
 
-  /**
-   * شروع Sync دوره‌ای با دیتابیس
-   */
-  private startSyncLoop() {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-    }
-
-    this.syncInterval = setInterval(() => {
-      this.syncStateToDatabase();
-    }, this.SYNC_INTERVAL);
-
-    this.logger.log('Sync loop started');
-  }
 
   /**
    * Sync کردن State حافظه با دیتابیس
@@ -851,24 +861,14 @@ export class AutoTimerService implements OnModuleInit {
    * Stop all timers and intervals (useful for shutdown)
    */
   onModuleDestroy() {
-    // Stop main loop
-    if (this.mainLoopInterval) {
-      clearInterval(this.mainLoopInterval);
-      this.mainLoopInterval = null;
-      this.logger.log('Main loop stopped');
-    }
-
-    // Stop sync loop
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-      this.syncInterval = null;
-      this.logger.log('Sync loop stopped');
-    }
-
+    // حذف Jobها از SocketScheduler
+    this.scheduler.removeJob('autoTimerMainLoop');
+    this.scheduler.removeJob('autoTimerSync');
+    
     // پاکسازی State
     this.roomStates.clear();
     
-    this.logger.log('Module destroyed - All timers and state cleared');
+    this.logger.log('AutoTimerService destroyed and jobs removed from SocketScheduler');
   }
 
   /**
@@ -896,8 +896,7 @@ export class AutoTimerService implements OnModuleInit {
       startedRooms: roomsList.filter(r => r.status === RoomStatus.STARTED).length,
       errorRooms: roomsList.filter(r => r.errorCount > 0).length,
       rooms: roomsList,
-      mainLoopActive: this.mainLoopInterval !== null,
-      syncLoopActive: this.syncInterval !== null,
+      schedulerActive: true,
     };
   }
 
@@ -928,7 +927,7 @@ export class AutoTimerService implements OnModuleInit {
       );
 
       return {
-        isHealthy: problematicRooms.length === 0 && status.mainLoopActive && status.syncLoopActive,
+        isHealthy: problematicRooms.length === 0 && status.schedulerActive,
         timestamp: new Date().toISOString(),
         
         // اطلاعات State در حافظه
@@ -945,11 +944,10 @@ export class AutoTimerService implements OnModuleInit {
           startedRooms: startedRoomsInDb,
         },
         
-        // وضعیت Loop ها
-        loops: {
-          mainLoopActive: status.mainLoopActive,
+        // وضعیت Scheduler
+        scheduler: {
+          active: status.schedulerActive,
           mainLoopInterval: this.MAIN_LOOP_INTERVAL,
-          syncLoopActive: status.syncLoopActive,
           syncInterval: this.SYNC_INTERVAL,
         },
         

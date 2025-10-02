@@ -58,6 +58,7 @@ export class CreateGlobalActiveRoomTable1700000000003
     await queryRunner.createForeignKey(
       'active_room_global',
       new TableForeignKey({
+        name: 'FK_active_room_global_gameRoomId',
         columnNames: ['gameRoomId'],
         referencedColumnNames: ['id'],
         referencedTableName: 'game_rooms',

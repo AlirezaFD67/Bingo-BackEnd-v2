@@ -1,4 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import {
   ApiTags,
   ApiOperation,
@@ -9,8 +10,9 @@ import { AutoTimerService } from './auto-timer.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
+import { SocketScheduler } from '../../utils/SocketScheduler';
 
-@ApiTags('admin-monitoring')
+@ApiExcludeController()
 @Controller('admin/monitoring')
 @UseGuards(JwtAuthGuard)
 export class MonitoringController {
@@ -134,6 +136,22 @@ export class MonitoringController {
   })
   async getHealthCheck() {
     return this.autoTimerService.healthCheck();
+  }
+
+  @Get('scheduler-status')
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'دریافت وضعیت SocketScheduler',
+    description: 'اطلاعات کامل وضعیت تایمر سراسری و همه job های در حال اجرا',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'وضعیت scheduler با موفقیت دریافت شد',
+  })
+  async getSchedulerStatus() {
+    const scheduler = SocketScheduler.getInstance();
+    return scheduler.getStatus();
   }
 }
 

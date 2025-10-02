@@ -39,15 +39,21 @@ export class CreateWheelSpinsTable1700000000013 implements MigrationInterface {
       true, // 🟢 اگر جدول وجود نداشته باشد ایجاد شود
     );
 
-    // 🟢 Foreign Key برای userId
-    await queryRunner.createForeignKey(
-      'wheel_spins',
-      new TableForeignKey({
-        columnNames: ['userId'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'users',
-        onDelete: 'CASCADE',
-      }),
+    // 🟢 Foreign Key برای userId با نام ثابت و idempotent
+    await queryRunner.query(
+      'ALTER TABLE "wheel_spins" DROP CONSTRAINT IF EXISTS "FK_wheel_spins_userId"',
+    );
+    await queryRunner.query(
+      `DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'FK_wheel_spins_userId'
+        ) THEN
+          ALTER TABLE "wheel_spins"
+          ADD CONSTRAINT "FK_wheel_spins_userId"
+          FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE;
+        END IF;
+      END; $$;`
     );
   }
 
